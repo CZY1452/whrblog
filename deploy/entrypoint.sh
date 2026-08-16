@@ -20,7 +20,9 @@ finally:
 done
 
 echo "==> Running database migrations..."
-python manage.py migrate --noinput
+# --fake-initial: 若表已存在（如 SQL 转储导入）则标记为已应用而非重建，避免 "table already exists"；
+# 若为空库则正常建表。对全新部署与已有库部署均安全。
+python manage.py migrate --fake-initial --noinput
 
 echo "==> Collecting static files..."
 python manage.py collectstatic --noinput --clear

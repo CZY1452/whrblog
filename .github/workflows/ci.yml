@@ -69,7 +69,15 @@ jobs:
         run: python manage.py check
 
       - name: Run tests
-        run: python -m pytest -q --tb=short
+        run: python -m pytest -q --tb=short 2>&1 | tee pytest.log
+
+      - name: Upload pytest log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-log
+          path: pytest.log
+          if-no-files-found: warn
 
   # ==================== 前端构建 ====================
   frontend:
