@@ -106,6 +106,10 @@ docker compose exec backend python manage.py createsuperuser
 
 > `.env.example` 中的 MySQL / Redis / Elasticsearch 均指向 Docker 服务名（mysql / redis / elasticsearch），并使用了开发默认密码。克隆到任意机器后执行 `cp .env.example .env && docker compose up -d` 即可直接跑起来，无需本地安装任何数据库或中间件。
 > 生产部署请把 `.env` 中的密码、`SECRET_KEY`、邮箱授权码等替换为真实值（可参考 `deploy/.env.prod`）。
+>
+> ⚠️ **仅限本地开发**：`.env.example` 里的 `DEBUG=True`、`ALLOWED_HOSTS=*` 以及写死的 `SECRET_KEY` 仅供本地开发。生产环境必须改为 `DEBUG=False`、将 `ALLOWED_HOSTS` 限定为真实域名、并生成随机 `SECRET_KEY`，否则存在调试信息泄露与 Host 头攻击风险。
+>
+> 💡 **预置示例数据**：若想直接拥有 123 篇技术文章与 admin 账号，在 `docker compose up -d` 之后运行 `bash deploy/seed/load_seed.sh`（脚本会导入种子 SQL 并重建 Elasticsearch 索引）。
 
 ### 方式二：本地开发
 
