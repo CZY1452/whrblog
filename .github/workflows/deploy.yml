@@ -1,0 +1,41 @@
+name: Deploy
+
+on:
+  # 仅手动触发（Actions 页面点击「Run workflow」）
+  # 待服务器改为 git 部署 + GitHub Secrets 配置完成后，
+  # 如需自动部署，取消下面 push 触发即可
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to server
+    runs-on: ubuntu-latest
+    # 说明：本工作流手动触发。如需「CI 通过后才部署」，
+    # 可改为在 ci.yml 末尾用 needs: [backend, frontend] 合并，或改用 workflow_run 触发。
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -e
+            cd /opt/whrblog
+
+            echo "==> 拉取最新代码..."
+            git pull --ff-only
+
+            echo "==> 重新构建 backend / frontend 镜像..."
+            # 只构建这两个（ES 镜像含 IK 插件、已预置在服务器，不重新构建）
+            docker compose build backend frontend
+
+            echo "==> 重启服务..."
+            docker compose up -d
+
+            echo "==> 清理旧镜像..."
+            docker image prune -f
+
+            echo "==> 部署完成，检查状态..."
+            docker compose ps

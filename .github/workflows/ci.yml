@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  # ==================== 后端测试 ====================
+  backend:
+    name: Backend (Django tests)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: whrblog
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DJANGO_SECRET_KEY: ci-test-secret-key
+      DJANGO_DEBUG: "True"
+      DJANGO_MYSQL_HOST: 127.0.0.1
+      DJANGO_MYSQL_PORT: "3306"
+      DJANGO_MYSQL_USER: root
+      DJANGO_MYSQL_PASSWORD: root
+      DJANGO_MYSQL_DATABASE: whrblog
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: "6379"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install system dependencies (for mysqlclient)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc pkg-config default-libmysqlclient-dev
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Django check
+        run: python manage.py check
+
+      - name: Run tests
+        run: python -m pytest -q --tb=short
+
+  # ==================== 前端构建 ====================
+  frontend:
+    name: Frontend (Vue build)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci || npm install
+        working-directory: frontend
+
+      - name: Build
+        run: npm run build
+        working-directory: frontend
