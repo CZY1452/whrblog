@@ -42,6 +42,8 @@ services:
     volumes:
       - static_data:/app/collectedstatic
       - media_data:/app/uploads
+      # 种子数据（首次部署自动灌入；详见 deploy/seed 与 loadseed 命令）
+      - ./deploy/seed:/app/seed:ro
     depends_on:
       mysql:
         condition: service_healthy
@@ -130,6 +132,8 @@ services:
       - media_data:/var/www/media:ro
       - certbot_conf:/etc/letsencrypt:ro
       - certbot_www:/var/www/certbot:ro
+      # HTTPS 配置模板：证书签发后由 deploy/enable-https.sh 激活
+      - ./deploy/nginx/https.conf.template:/etc/nginx/https.conf.template:ro
     depends_on:
       backend:
         condition: service_healthy
@@ -209,18 +213,30 @@ services:
       start_period: 60s
 
   # ----------------------------------------------------------
-  #  Certbot（Let's Encrypt SSL 证书自动续期）
-  #  首次启动时先注释掉，获取证书后再取消注释
+  #  Certbot（Let's Encrypt SSL 证书签发 + 自动续期）
+  #  首次/续期均使用 webroot 模式（nginx 已在 :80 暴露 /.well-known/acme-challenge）
+  #  证书签发后，在 nginx 容器内执行 deploy/enable-https.sh 激活 443 监听
+  #  本地开发（域名未指向本机）时 certonly 会失败，但用 || true 不影响其他服务
   # ----------------------------------------------------------
-  # certbot:
-  #   image: certbot/certbot:latest
-  #   container_name: whrblog-certbot
-  #   volumes:
-  #     - certbot_conf:/etc/letsencrypt
-  #     - certbot_www:/var/www/certbot
-  #   entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 12h; done'
-  #   networks:
-  #     - whrblog-net
+  certbot:
+    image: certbot/certbot:latest
+    container_name: whrblog-certbot
+    environment:
+      CERTBOT_EMAIL: ${CERTBOT_EMAIL:-admin@whr.hopto.org}
+    volumes:
+      - certbot_conf:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    entrypoint: >-
+      /bin/sh -c 'trap exit TERM;
+      certbot certonly --webroot -w /var/www/certbot
+      --email "$$CERTBOT_EMAIL" --agree-tos --no-eff-email
+      -d whr.hopto.org --non-interactive || true;
+      while :; do certbot renew --webroot -w /var/www/certbot; sleep 12h; done'
+    depends_on:
+      nginx:
+        condition: service_healthy
+    networks:
+      - whrblog-net
 
 volumes:
   mysql_data:

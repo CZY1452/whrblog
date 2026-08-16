@@ -68,6 +68,11 @@ jobs:
       - name: Django check
         run: python manage.py check
 
+      - name: Check for missing migrations
+        # 防止「改了 model 却忘了 commit 迁移文件」——这正是当初 CI 崩溃的根因。
+        # 若有未生成的迁移，此步直接失败。
+        run: python manage.py makemigrations --check --dry-run
+
       - name: Run tests
         run: python -m pytest -q --tb=short 2>&1 | tee pytest.log
 
@@ -101,3 +106,22 @@ jobs:
       - name: Build
         run: npm run build
         working-directory: frontend
+
+  # ==================== 镜像构建验证 ====================
+  docker-build:
+    name: Docker image build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image
+        # 验证 Dockerfile + requirements.txt 能真实构建出可用镜像
+        run: docker compose build backend
+
+      - name: Build frontend image
+        # 验证 Dockerfile.frontend + package*.json 能真实构建出前端镜像
+        run: docker compose build frontend

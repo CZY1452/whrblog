@@ -1,0 +1,82 @@
+# ============================================================
+#  WhrBlog HTTPS 站点配置（由 deploy/enable-https.sh 激活）
+#
+#  该文件由 certbot 签发证书后复制到 nginx 的 conf.d 并 reload。
+#  证书路径固定为 /etc/letsencrypt/live/whr.hopto.org/（certbot -d whr.hopto.org 生成）。
+#  SSL 参数内联，避免依赖 certbot 的 options-ssl-nginx.conf（可能不存在）。
+# ============================================================
+
+server {
+    listen 443 ssl http2;
+    server_name whr.hopto.org;
+
+    ssl_certificate     /etc/letsencrypt/live/whr.hopto.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/whr.hopto.org/privkey.pem;
+
+    # 内联安全 SSL 参数
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+
+    # HSTS（证书生效后再开启，避免锁死）
+    add_header Strict-Transport-Security "max-age=31536000" always;
+
+    # --- API / Admin → Django 后端 ---
+    location /api/ {
+        proxy_pass http://backend:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 120s;
+        proxy_connect_timeout 10s;
+    }
+    location /admin/ {
+        proxy_pass http://backend:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # --- Django 静态文件 ---
+    location /static/ {
+        alias /var/www/static/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+    }
+    location /media/ {
+        alias /var/www/media/;
+        expires 7d;
+        add_header Cache-Control "public";
+        access_log off;
+    }
+
+    # --- Vue SPA 前端 ---
+    location / {
+        root /usr/share/nginx/html;
+        try_files $uri $uri/ /index.html;
+        location = /index.html {
+            add_header Cache-Control "no-cache, no-store, must-revalidate";
+            add_header Pragma "no-cache";
+            expires 0;
+        }
+    }
+}
+
+# ----------------------------------------------------------
+#  可选：HTTP → HTTPS 强制跳转（启用 HTTPS 后取消下面注释块）
+#  注意：default.conf 已有一个 :80 server，启用本段会形成两个 :80 server，
+#  nginx 以先加载者为准。如需强制跳转，请先把 default.conf 的站点 root 去掉，
+#  仅保留 /.well-known/acme-challenge/ 与 return 301。生产推荐做法见 README。
+# ----------------------------------------------------------
+# server {
+#     listen 80;
+#     server_name whr.hopto.org;
+#     location /.well-known/acme-challenge/ { root /var/www/certbot; }
+#     location / { return 301 https://$host$request_uri; }
+# }

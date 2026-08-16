@@ -24,6 +24,10 @@ echo "==> Running database migrations..."
 # 若为空库则正常建表。对全新部署与已有库部署均安全。
 python manage.py migrate --fake-initial --noinput
 
+echo "==> Loading seed data (if database is empty)..."
+# 幂等：仅当库为空时灌入示例文章/分类/管理员；已有数据则跳过，不重复灌入。
+python manage.py loadseed || echo "  (seed load skipped)"
+
 echo "==> Collecting static files..."
 python manage.py collectstatic --noinput --clear
 
