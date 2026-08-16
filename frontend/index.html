@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="index,follow">
+    <title>WhrBlog</title>
+    <link rel="icon" href="/favicon.ico">
+    <script>
+        (function() {
+            const STORAGE_KEY = 'dark-mode-enabled';
+            const THEME_ATTR = 'data-theme';
+            const ENABLE_SYSTEM = true;
+
+            function getPreferredTheme() {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved !== null) return saved === 'dark' ? 'dark' : 'light';
+                if (ENABLE_SYSTEM && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    return 'dark';
+                }
+                return 'light';
+            }
+
+            const theme = getPreferredTheme();
+            document.documentElement.setAttribute(THEME_ATTR, theme);
+        })();
+    </script>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>

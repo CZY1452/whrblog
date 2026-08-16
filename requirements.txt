@@ -1,0 +1,31 @@
+# Core
+Django==5.2.16
+djangorestframework==3.15.2
+mysqlclient==2.2.8
+
+# Django plugins
+django-compressor==4.6.0
+python-slugify==8.0.4
+
+# Features
+bleach==6.4.0
+celery==5.6.3
+elasticsearch>=9.0.0,<10
+Markdown==3.10.2
+pillow==12.3.0
+PyYAML==6.0.2
+python-dotenv==1.0.1
+redis==7.4.1
+
+# Compressor dependencies
+Pygments==2.20.0
+rcssmin==1.2.2
+rjsmin==1.2.5
+
+# Testing
+coverage==7.15.2
+pytest==9.1.1
+pytest-django==4.14.0
+
+# Production
+gunicorn>=22.0.0

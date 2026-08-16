@@ -1,0 +1,31 @@
+{
+  "name": "whrblog-frontend",
+  "version": "1.0.0",
+  "description": "Modern frontend for WhrBlog",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "watch": "vite build --watch",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vitejs/plugin-vue": "^5.2.4",
+    "pinia": "^2.3.1",
+    "vue": "^3.5.41",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.20",
+    "autoprefixer": "^10.5.4",
+    "cssnano": "^7.1.9",
+    "cssnano-preset-advanced": "^7.0.16",
+    "postcss": "^8.5.25",
+    "tailwindcss": "^3.4.1",
+    "terser": "^5.49.0",
+    "vite": "^6.4.3"
+  },
+  "overrides": {
+    "esbuild": ">=0.25.0"
+  }
+}

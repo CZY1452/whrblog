@@ -1,0 +1,24 @@
+# ============================================================
+#  WhrBlog 前端构建 + Nginx 托管
+#  多阶段构建：Node 编译 Vue → Nginx 提供静态资源
+# ============================================================
+
+# --- 阶段 1：构建前端 ---
+FROM node:20-alpine AS builder
+
+WORKDIR /build
+COPY frontend/package.json frontend/package-lock.json* ./
+RUN npm ci --registry=https://registry.npmmirror.com || npm install --registry=https://registry.npmmirror.com
+
+COPY frontend/ ./
+RUN npm run build
+
+# --- 阶段 2：Nginx 静态资源 ---
+FROM nginx:1.27-alpine
+
+# 将构建产物复制到 Nginx 目录
+COPY --from=builder /build/dist /usr/share/nginx/html
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=3s \
+    CMD wget -q --spider http://localhost/ || exit 1
