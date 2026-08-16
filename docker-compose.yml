@@ -28,6 +28,8 @@ services:
       DJANGO_MYSQL_DATABASE: ${DJANGO_MYSQL_DATABASE:-whrblog}
       REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}
       DJANGO_REDIS_URL: ":${REDIS_PASSWORD}@redis:6379/0"
+      # ES 在容器内走 Docker 服务名（ES 为明文 HTTP，非 HTTPS；.env 同样用该服务名）
+      ES_HOST: "http://elasticsearch:9200"
     volumes:
       - static_data:/app/collectedstatic
       - media_data:/app/uploads
@@ -65,6 +67,8 @@ services:
       DJANGO_MYSQL_DATABASE: ${DJANGO_MYSQL_DATABASE:-whrblog}
       REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}
       DJANGO_REDIS_URL: ":${REDIS_PASSWORD}@redis:6379/0"
+      # ES 在容器内走 Docker 服务名（ES 为明文 HTTP，非 HTTPS；.env 同样用该服务名）
+      ES_HOST: "http://elasticsearch:9200"
     depends_on:
       mysql:
         condition: service_healthy
@@ -183,7 +187,7 @@ services:
     networks:
       - whrblog-net
     healthcheck:
-      test: ["CMD-SHELL", "curl -sk -u elastic:${ES_PASSWORD} https://localhost:9200/_cluster/health || exit 1"]
+      test: ["CMD-SHELL", "curl -s -u elastic:${ES_PASSWORD} http://localhost:9200/_cluster/health || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 5
