@@ -1,7 +1,7 @@
 # ============================================================
 #  WhrBlog Docker Compose 编排
 #  使用方式：
-#    1. cp deploy/.env.prod .env  然后修改所有 CHANGE_ME 值
+#    1. cp .env.example .env   （开发默认配置，开箱即用；生产请改 .env 中的敏感值）
 #    2. docker compose up -d
 #    3. docker compose exec backend python manage.py createsuperuser
 # ============================================================

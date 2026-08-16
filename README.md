@@ -91,20 +91,21 @@ whrblog/
 - MySQL 8.0 / Redis 7 / Elasticsearch 9.4（可用 Docker 一键启动）
 - Docker & Docker Compose（生产部署）
 
-### 方式一：Docker 一键部署（推荐）
+### 方式一：Docker 一键部署（推荐，零配置开箱即用）
 
 ```bash
-# 1. 复制环境变量模板并填写
-cp deploy/.env.prod .env
+# 1. 复制开发环境变量模板（已含纯 Docker 默认配置，无需修改即可本地运行）
+cp .env.example .env
 
 # 2. 构建并启动所有服务
 docker compose up -d --build
 
-# 3. 创建管理员
+# 3.（可选）创建管理员；若已导入数据可跳过
 docker compose exec backend python manage.py createsuperuser
 ```
 
-> 首次构建会自动完成数据库迁移、静态文件收集、ES 索引初始化，访问 `http://localhost` 即可。
+> `.env.example` 中的 MySQL / Redis / Elasticsearch 均指向 Docker 服务名（mysql / redis / elasticsearch），并使用了开发默认密码。克隆到任意机器后执行 `cp .env.example .env && docker compose up -d` 即可直接跑起来，无需本地安装任何数据库或中间件。
+> 生产部署请把 `.env` 中的密码、`SECRET_KEY`、邮箱授权码等替换为真实值（可参考 `deploy/.env.prod`）。
 
 ### 方式二：本地开发
 
