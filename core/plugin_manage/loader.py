@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 # 全局插件注册表
 _loaded_plugins = []
 
+
 def load_plugins():
     """
     Dynamically loads and initializes plugins from the 'plugins' directory.
@@ -38,29 +39,3 @@ def load_plugins():
                 logger.error(f"Unexpected error loading plugin: {plugin_name}", exc_info=e)
 
     return _loaded_plugins
-
-def get_loaded_plugins():
-    """获取所有已加载的插件"""
-    return _loaded_plugins
-
-def get_plugin_by_name(plugin_name):
-    """根据名称获取插件"""
-    for plugin in _loaded_plugins:
-        if plugin.plugin_slug == plugin_name:
-            return plugin
-    return None
-
-def get_plugin_by_slug(plugin_slug):
-    """根据slug获取插件"""
-    for plugin in _loaded_plugins:
-        if plugin.plugin_slug == plugin_slug:
-            return plugin
-    return None
-
-def get_plugins_info():
-    """获取所有插件的信息"""
-    return [plugin.get_plugin_info() for plugin in _loaded_plugins]
-
-def get_plugins_by_position(position):
-    """获取支持指定位置的插件"""
-    return [plugin for plugin in _loaded_plugins if position in plugin.SUPPORTED_POSITIONS] 

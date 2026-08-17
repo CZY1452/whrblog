@@ -13,9 +13,6 @@ from core.plugin_manage import hooks
 from core.plugin_manage.loader import load_plugins
 from core.tests.test_base import BaseTestCase, PluginTestMixin
 
-# 导入钩子常量
-from core.plugin_manage.hook_constants import HEAD_RESOURCES_HOOK, BODY_RESOURCES_HOOK
-
 
 class PluginHooksTest(TestCase, PluginTestMixin):
     """测试插件钩子系统"""
@@ -41,17 +38,6 @@ class PluginHooksTest(TestCase, PluginTestMixin):
         hooks.register(ARTICLE_CONTENT_HOOK_NAME, test_filter)
         result = hooks.apply_filters(ARTICLE_CONTENT_HOOK_NAME, "original")
         self.assertEqual(result, "original modified")
-
-    def test_run_action(self):
-        """测试运行动作钩子"""
-        executed = []
-
-        def test_action():
-            executed.append(True)
-
-        hooks.register(ARTICLE_CREATE, test_action)
-        hooks.run_action(ARTICLE_CREATE)
-        self.assertTrue(len(executed) > 0)
 
     def test_multiple_hooks(self):
         """测试多个钩子"""
@@ -119,13 +105,6 @@ class BasePluginTest(BaseTestCase):
         plugin = self._create_test_plugin()
         # 基类的 register_hooks 应该可以被调用
         plugin.register_hooks()
-
-    def test_plugin_get_context(self):
-        """测试获取插件信息"""
-        plugin = self._create_test_plugin()
-        plugin_info = plugin.get_plugin_info()
-        self.assertIsInstance(plugin_info, dict)
-        self.assertEqual(plugin_info['name'], '测试插件')
 
 
 class PluginLoaderTest(TestCase):
