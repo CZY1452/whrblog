@@ -110,17 +110,3 @@ Nginx 使用 server_name _; 通配，任何指向本机 IP 的请求都会被正
     worker  ──► 复用后端镜像，处理邮件与 ES 同步（Celery）
 
 共 7 个服务：backend、worker、frontend、nginx、mysql、redis、elasticsearch。
-
-## 十一、常见问题
-
-Q：访问 http://IP 提示 DisallowedHost？
-A：DJANGO_ALLOWED_HOSTS 没有包含你的服务器 IP，改成 YOUR_SERVER_IP,127.0.0.1,localhost 后 docker compose restart backend。
-
-Q：登录后立刻退出 / 表单提交 403？
-A：确认 DJANGO_SECURE_SSL=False；若为 True，Cookie 被标记为 Secure，HTTP 下无法携带。
-
-Q：静态资源 404？
-A：确认 backend 已执行 collectstatic（entrypoint 默认执行），且 Nginx 已挂载 static_data 卷。
-
-Q：以后想用 HTTPS 怎么办？
-A：本仓库已清理所有证书相关脚手架。需要时在 Nginx 前加一层证书反代（如 Cloudflare / 云厂商证书），并把 DJANGO_SECURE_SSL 改为 True 即可。
