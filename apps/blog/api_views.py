@@ -47,8 +47,20 @@ class ArticleViewSet(mixins.ListModelMixin,
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        # 阅读量 +1
-        instance.viewed()
+        # 阅读量 +1：同一 IP 对同一文章 10 分钟内只计一次，降低高流量下的热点写；
+        # Redis 不可用时降级为直接计数
+        from django.core.cache import cache
+        key = f"article_view_{request.META.get('REMOTE_ADDR', 'unknown')}_{instance.id}"
+        try:
+            counted = cache.get(key)
+        except Exception:
+            counted = None
+        if not counted:
+            instance.viewed()
+            try:
+                cache.set(key, '1', 600)
+            except Exception:
+                pass
         serializer = ArticleDetailSerializer(instance, context={'request': request})
         return Response(serializer.data)
 

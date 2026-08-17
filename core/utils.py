@@ -29,7 +29,12 @@ def cache_decorator(expiration=3 * 60):
 
                 m = hashlib.sha256(unique_str.encode('utf-8'))
                 key = m.hexdigest()
-            value = cache.get(key)
+            # Redis 不可用时 graceful 降级：直接执行原函数，不缓存，保证业务不中断
+            try:
+                value = cache.get(key)
+            except Exception:
+                logger.warning('cache_decorator: cache.get 失败，跳过缓存直接执行 %s', func.__name__)
+                return func(*args, **kwargs)
             if value is not None:
                 if str(value) == '__default_cache_value__':
                     return None
@@ -40,10 +45,13 @@ def cache_decorator(expiration=3 * 60):
                     'cache_decorator set cache:%s key:%s' %
                     (func.__name__, key))
                 value = func(*args, **kwargs)
-                if value is None:
-                    cache.set(key, '__default_cache_value__', expiration)
-                else:
-                    cache.set(key, value, expiration)
+                try:
+                    if value is None:
+                        cache.set(key, '__default_cache_value__', expiration)
+                    else:
+                        cache.set(key, value, expiration)
+                except Exception:
+                    logger.warning('cache_decorator: cache.set 失败，本次不缓存 %s', func.__name__)
                 return value
 
         return news

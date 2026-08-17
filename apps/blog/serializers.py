@@ -4,6 +4,14 @@ from apps.accounts.models import BlogUser
 from apps.blog.models import Article, BlogSettings, Category, Links, SideBar, Tag
 
 
+def _blog_setting(context):
+    """从序列化上下文取博客设置：同一请求内只查询一次，嵌套序列化复用，消除 N 次 Redis GET"""
+    if 'blog_setting' not in context:
+        from core.utils import get_blog_setting
+        context['blog_setting'] = get_blog_setting()
+    return context['blog_setting']
+
+
 class BlogUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = BlogUser
@@ -26,8 +34,7 @@ class CategorySerializer(serializers.ModelSerializer):
         return f"/category/{obj.slug}"
 
     def get_seo_title(self, obj):
-        from core.utils import get_blog_setting
-        return f"{obj.name} | {get_blog_setting().site_name}"
+        return f"{obj.name} | {_blog_setting(self.context).site_name}"
 
     def get_seo_description(self, obj):
         count = getattr(obj, 'article_count', 0) or 0
@@ -35,12 +42,20 @@ class CategorySerializer(serializers.ModelSerializer):
 
     def get_child_categories(self, obj):
         from django.db.models import Count, Q
-        queryset = Category.objects.filter(
-            parent_category=obj
-        ).annotate(
-            article_count=Count('article', filter=Q(article__status='p', article__type='a'))
+        ctx = self.context
+        tree = ctx.get('category_tree')
+        if tree is None:
+            # 一次性加载全部分类并计算文章数，整棵分类树共享缓存，避免每项一次查询（N+1）
+            queryset = Category.objects.annotate(
+                article_count=Count('article', filter=Q(article__status='p', article__type='a'))
+            )
+            tree = {c.id: c for c in queryset}
+            ctx['category_tree'] = tree
+        children = sorted(
+            (c for c in tree.values() if c.parent_category_id == obj.id),
+            key=lambda c: -c.index,
         )
-        return CategorySerializer(queryset, many=True, context=self.context).data
+        return CategorySerializer(children, many=True, context=ctx).data
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -57,8 +72,7 @@ class TagSerializer(serializers.ModelSerializer):
         return f"/tag/{obj.slug}"
 
     def get_seo_title(self, obj):
-        from core.utils import get_blog_setting
-        return f"{obj.name} | {get_blog_setting().site_name}"
+        return f"{obj.name} | {_blog_setting(self.context).site_name}"
 
     def get_seo_description(self, obj):
         count = getattr(obj, 'article_count', 0) or 0
@@ -135,9 +149,9 @@ class ArticleListSerializer(serializers.ModelSerializer):
         return f"/article/{obj.id}"
 
     def get_summary(self, obj):
-        from core.utils import get_blog_setting, strip_markdown
+        from core.utils import strip_markdown
         from django.utils.text import Truncator
-        length = get_blog_setting().article_sub_length
+        length = _blog_setting(self.context).article_sub_length
         plain = strip_markdown(obj.body)
         return Truncator(plain).chars(length, truncate='...')
 
@@ -203,8 +217,7 @@ class ArticleDetailSerializer(ArticleListSerializer):
         return {'id': nxt.id, 'title': nxt.title, 'url': f"/article/{nxt.id}"}
 
     def get_seo_title(self, obj):
-        from core.utils import get_blog_setting
-        return f"{obj.title} | {get_blog_setting().site_name}"
+        return f"{obj.title} | {_blog_setting(self.context).site_name}"
 
     def get_seo_description(self, obj):
         from django.utils.html import strip_tags
@@ -216,6 +229,5 @@ class ArticleDetailSerializer(ArticleListSerializer):
         return Truncator(description).chars(150, truncate='...')
 
     def get_seo_keywords(self, obj):
-        from core.utils import get_blog_setting
         tags = [tag.name.strip() for tag in obj.tags.all()]
-        return ", ".join(tags) if tags else get_blog_setting().site_keywords
+        return ", ".join(tags) if tags else _blog_setting(self.context).site_keywords
