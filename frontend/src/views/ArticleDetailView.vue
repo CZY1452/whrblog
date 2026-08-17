@@ -61,6 +61,7 @@ async function loadComments() {
     const d = await res.json();
     allComments.value = d.results || [];
     count.value = d.count || 0;
+    if (d.page_size) pageSize.value = d.page_size;
   } catch (e) {
     commentsError.value = e.message;
   } finally {
@@ -68,9 +69,9 @@ async function loadComments() {
   }
 }
 
-// 每页评论数，需与后端 DRF_PAGE_SIZE（默认 10）保持一致
-const pageSize = 10;
-const totalPages = computed(() => Math.max(1, Math.ceil(count.value / pageSize)));
+// 每页评论数：初始 10，加载后从接口响应的 page_size 同步，无需与后端 DRF_PAGE_SIZE 硬耦合
+const pageSize = ref(10);
+const totalPages = computed(() => Math.max(1, Math.ceil(count.value / pageSize.value)));
 
 function roots() {
   return allComments.value.filter(c => !c.parent_id);

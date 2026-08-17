@@ -14,7 +14,7 @@ const loading = ref(true);
 const error = ref(null);
 const count = ref(0);
 const page = ref(parseInt(route.query.page) || 1);
-const pageSize = 10;
+const pageSize = ref(10);
 
 async function load() {
   loading.value = true;
@@ -23,6 +23,7 @@ async function load() {
     const data = await apiGet(`/api/articles/?page=${page.value}`);
     articles.value = data.results || [];
     count.value = data.count || 0;
+    if (data.page_size) pageSize.value = data.page_size;
   } catch (e) {
     error.value = e.message;
   } finally {
@@ -30,7 +31,7 @@ async function load() {
   }
 }
 
-const totalPages = computed(() => Math.max(1, Math.ceil(count.value / pageSize)));
+const totalPages = computed(() => Math.max(1, Math.ceil(count.value / pageSize.value)));
 
 function goToPage(p) {
   if (p < 1 || p > totalPages.value) return;
