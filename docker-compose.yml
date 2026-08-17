@@ -65,6 +65,9 @@ services:
   # ----------------------------------------------------------
   worker:
     image: whrblog-backend:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: whrblog-worker
     restart: unless-stopped
     entrypoint: ["celery", "-A", "whrblog", "worker", "-l", "info", "--concurrency=2"]
@@ -186,8 +189,8 @@ services:
   # ----------------------------------------------------------
   elasticsearch:
     build:
-      context: .
-      dockerfile: deploy/es/Dockerfile
+      context: ./deploy/es
+      dockerfile: Dockerfile
     image: whrblog-es:9.4.3
     container_name: whrblog-es
     restart: unless-stopped
