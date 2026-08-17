@@ -6,7 +6,6 @@ import logging
 import random
 import string
 import hashlib
-import hmac
 
 import bleach
 import markdown
@@ -15,12 +14,6 @@ from django.contrib.sites.models import Site
 from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
-
-
-def get_sha256(value):
-    key = settings.SECRET_KEY.encode('utf-8')
-    msg = str(value).encode('utf-8')
-    return hmac.new(key, msg, hashlib.sha256).hexdigest()
 
 
 def cache_decorator(expiration=3 * 60):
@@ -127,13 +120,6 @@ def send_email(emailto, title, content):
 def generate_code() -> str:
     """生成随机数验证码"""
     return ''.join(random.sample(string.digits, 6))
-
-
-def parse_dict_to_url(dict):
-    from urllib.parse import quote
-    url = '&'.join(['{}={}'.format(quote(k, safe='/'), quote(v, safe='/'))
-                    for k, v in dict.items()])
-    return url
 
 
 def get_blog_setting():

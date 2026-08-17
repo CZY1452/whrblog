@@ -29,7 +29,6 @@ from core.utils import (
     delete_sidebar_cache,
     generate_code,
     get_current_site,
-    get_sha256,
     send_email,
 )
 

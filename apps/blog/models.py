@@ -117,13 +117,6 @@ class Article(BaseModel):
     def get_absolute_url(self):
         return f"/article/{self.id}"
 
-    @cache_decorator(CacheTimeout.HOUR_10)
-    def get_category_tree(self):
-        tree = self.category.get_category_tree()
-        names = list(map(lambda c: (c.name, c.get_absolute_url()), tree))
-
-        return names
-
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 
@@ -170,22 +163,6 @@ class Category(BaseModel):
 
     def __str__(self):
         return self.name
-
-    @cache_decorator(CacheTimeout.HOUR_10)
-    def get_category_tree(self):
-        """
-        递归获得分类目录的父级
-        :return:
-        """
-        categorys = []
-
-        def parse(category):
-            categorys.append(category)
-            if category.parent_category:
-                parse(category.parent_category)
-
-        parse(self)
-        return categorys
 
 
 class Tag(BaseModel):

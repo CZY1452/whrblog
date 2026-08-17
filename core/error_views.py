@@ -33,11 +33,6 @@ def _error_response(request, status_code, message, exception=None):
     )
 
 
-def render_error_page(request, status_code, message, exception=None):
-    """兼容旧接口签名，统一走 JSON 错误体"""
-    return _error_response(request, status_code, message, exception)
-
-
 def page_not_found_view(request, exception, template_name='blog/error_page.html'):
     return _error_response(
         request,
@@ -60,14 +55,5 @@ def permission_denied_view(request, exception, template_name='blog/error_page.ht
         request,
         403,
         'Sorry, you do not have permission to access this page.',
-        exception
-    )
-
-
-def bad_request_view(request, exception, template_name='blog/error_page.html'):
-    return _error_response(
-        request,
-        400,
-        'Sorry, the request was invalid.',
         exception
     )

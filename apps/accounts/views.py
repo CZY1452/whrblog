@@ -1,12 +1,8 @@
-import logging
-
 from django.core import signing as django_signing
 from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 
 from .models import BlogUser
-
-logger = logging.getLogger(__name__)
 
 # 纯 API 架构：注册/登录/登出/忘记密码/用户中心全部由 accounts.api_views 提供。
 # 本文件仅保留邮件链接跳回所需的薄重定向端点。
