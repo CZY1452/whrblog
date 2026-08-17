@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { apiGet, apiPost, apiDownloadFile, getCsrfToken, extractError } from '../api.js';
+import { apiGet, apiPost, apiDownloadFile, getCsrfToken } from '../api.js';
 import { setSeo } from '../seo.js';
 
 const route = useRoute();
@@ -68,7 +68,9 @@ async function loadComments() {
   }
 }
 
-const totalPages = computed(() => Math.max(1, Math.ceil(count.value / 10)));
+// 每页评论数，需与后端 DRF_PAGE_SIZE（默认 10）保持一致
+const pageSize = 10;
+const totalPages = computed(() => Math.max(1, Math.ceil(count.value / pageSize)));
 
 function roots() {
   return allComments.value.filter(c => !c.parent_id);

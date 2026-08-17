@@ -137,8 +137,6 @@ export function initDarkMode() {
 
     // 监听系统主题变化
     setupSystemThemeListener();
-
-    console.log('🌗 Dark Mode initialized');
 }
 
 // 立即执行防闪烁初始化（在模块加载时）

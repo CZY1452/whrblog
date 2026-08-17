@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useSiteStore } from '../stores/site.js';
 import { useAuthStore } from '../stores/auth.js';
@@ -16,6 +16,20 @@ const navTags = computed(() => siteStore.navTags);
 const navPages = computed(() => siteStore.navPages);
 const user = computed(() => authStore.user);
 const isSuperuser = computed(() => authStore.isSuperuser);
+
+// 暗色模式切换（window.DarkMode 由 features/darkMode.js 注入）
+const isDark = ref(false);
+function syncThemeState() {
+  isDark.value = window.DarkMode?.getCurrentTheme() === 'dark';
+}
+function toggleDarkMode() {
+  window.DarkMode?.toggle();
+  syncThemeState();
+}
+onMounted(() => {
+  syncThemeState();
+  document.addEventListener('themeChanged', syncThemeState);
+});
 
 const avatarText = computed(() => {
   if (!user.value) return '';
@@ -105,6 +119,17 @@ async function logout() {
           <router-link to="/login" class="px-3 py-2 rounded text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-slate-700">登录</router-link>
           <router-link to="/register" class="px-3 py-2 rounded text-sm bg-blue-600 text-white hover:bg-blue-700">注册</router-link>
         </template>
+        <button @click="toggleDarkMode" type="button"
+          class="px-2 py-2 rounded text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
+          :aria-label="isDark ? '切换到亮色模式' : '切换到暗色模式'"
+          :title="isDark ? '切换到亮色模式' : '切换到暗色模式'">
+          <svg v-if="isDark" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+          </svg>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.36 6.36l-.7-.7M6.34 6.34l-.7-.7m12.72 0l-.7.7M6.34 17.66l-.7.7M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+        </button>
         <button @click="mobileOpen = !mobileOpen" class="lg:hidden px-2 py-2 text-gray-600 dark:text-gray-300">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />

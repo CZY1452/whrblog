@@ -9,8 +9,6 @@ from .models import Article, Category, Tag, Links, SideBar, BlogSettings
 
 
 class ArticleForm(forms.ModelForm):
-    # body = forms.CharField(widget=AdminPagedownWidget())
-
     class Meta:
         model = Article
         fields = '__all__'

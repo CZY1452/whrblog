@@ -2,6 +2,9 @@ import { defineConfig } from 'vite';
 import path from 'path';
 import vue from '@vitejs/plugin-vue';
 
+// 开发代理目标，可用环境变量 API_PROXY_TARGET 覆盖（默认本地 Django:8000）
+const API_TARGET = process.env.API_PROXY_TARGET || 'http://127.0.0.1:8000';
+
 export default defineConfig({
   plugins: [vue()],
   // 构建配置
@@ -113,27 +116,27 @@ export default defineConfig({
     // 将 /api /media /admin /sitemap.xml /health 代理到 Django（开发态同域，Cookie 顺畅）
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8000',
+        target: API_TARGET,
         changeOrigin: true,
       },
       '/media': {
-        target: 'http://127.0.0.1:8000',
+        target: API_TARGET,
         changeOrigin: true,
       },
       '/static': {
-        target: 'http://127.0.0.1:8000',
+        target: API_TARGET,
         changeOrigin: true,
       },
       '/admin': {
-        target: 'http://127.0.0.1:8000',
+        target: API_TARGET,
         changeOrigin: true,
       },
       '/sitemap.xml': {
-        target: 'http://127.0.0.1:8000',
+        target: API_TARGET,
         changeOrigin: true,
       },
       '/health': {
-        target: 'http://127.0.0.1:8000',
+        target: API_TARGET,
         changeOrigin: true,
       },
     },

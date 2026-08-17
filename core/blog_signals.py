@@ -94,7 +94,6 @@ def comment_post_save(sender, instance, created, raw, using, update_fields, **kw
         cache.delete(comment_cache_key)
         delete_view_cache('article_comments', [str(instance.article.pk)])
         delete_sidebar_cache()
-        cache.delete('seo_processor')
     except Exception:
         logger.exception('清理评论缓存失败，忽略（不影响评论保存）')
 
@@ -111,7 +110,6 @@ def blog_settings_changed(sender, instance, **kwargs):
     """博客设置变更后清理 'get_blog_setting' 缓存，避免修改后最长 10 小时不生效"""
     try:
         cache.delete('get_blog_setting')
-        cache.delete('seo_processor')
     except Exception:
         logger.exception('清理博客设置缓存失败，忽略')
 
@@ -151,7 +149,6 @@ def article_post_save(sender, instance, created, raw, using, update_fields, **kw
 
         # 清理侧边栏和上下文处理器缓存
         delete_sidebar_cache()
-        cache.delete('seo_processor')
     except Exception:
         logger.exception('清理文章缓存失败，忽略（不影响文章保存）')
 
@@ -170,7 +167,6 @@ def category_post_save(sender, instance, created, raw, using, update_fields, **k
         # 清理分类相关缓存
         cache.delete(f'category_list_{instance.name.replace(" ", "_")}_1')
         delete_sidebar_cache()
-        cache.delete('seo_processor')
     except Exception:
         logger.exception('清理分类缓存失败，忽略')
     # 分类名变更，重新索引该分类下的文章（异步任务）
@@ -206,7 +202,6 @@ def user_post_save(sender, instance, created, raw, using, update_fields, **kwarg
         return
     try:
         delete_sidebar_cache()
-        cache.delete('seo_processor')
     except Exception:
         logger.exception('清理用户缓存失败，忽略')
 

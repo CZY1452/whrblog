@@ -64,7 +64,6 @@ if not SECRET_KEY:
     )
 # 安全警告：生产环境请勿开启 DEBUG 调试模式！
 DEBUG = env_to_bool('DJANGO_DEBUG', False)
-# DEBUG = False
 TESTING = (len(sys.argv) > 1 and sys.argv[1] == 'test') or 'pytest' in sys.modules
 
 # 允许访问的主机名列表（逗号分隔）
@@ -80,16 +79,8 @@ CSRF_TRUSTED_ORIGINS = env_to_list(
     ])
 
 # ==================== 生产安全配置 ====================
-# 当 Nginx 处理 SSL 终止后，通过 X-Forwarded-Proto 告知 Django 当前请求是否为 HTTPS
-_SECURE_SSL = env_to_bool('DJANGO_SECURE_SSL', False)
-if _SECURE_SSL:
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    SECURE_SSL_REDIRECT = False          # Nginx 已做重定向，Django 不再重复
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = 31536000       # 1 年
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+# 纯 HTTP 直访部署：本站点不做 HTTPS，故不启用安全 Cookie / HSTS 等。
+# 若未来在反向代理层启用 HTTPS，请在此恢复 SESSION_COOKIE_SECURE / CSRF_COOKIE_SECURE 等设置。
 
 # 应用定义
 
@@ -227,9 +218,6 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'plugins'),  # 让Django能找到插件的静态文件
 ]
 
-# Vite开发服务器URL（开发模式）
-VITE_DEV_SERVER_URL = os.environ.get('VITE_DEV_SERVER_URL', 'http://localhost:5173')
-
 AUTH_USER_MODEL = 'accounts.BlogUser'
 LOGIN_URL = '/login/'
 
@@ -307,7 +295,7 @@ if not _es_password and not DEBUG:
         '请在 .env 文件中配置 Elasticsearch 密码。'
     )
 ELASTICSEARCH_DSL = {
-    'hosts': os.environ.get('ES_HOST', 'https://localhost:9200'),
+    'hosts': os.environ.get('ES_HOST', 'http://localhost:9200'),
     'basic_auth': (
         os.environ.get('ES_USER', 'elastic'),
         _es_password or '',

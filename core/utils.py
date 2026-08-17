@@ -82,6 +82,24 @@ def get_current_site():
     return site
 
 
+def get_site_scheme():
+    """返回站点协议（http/https）。
+
+    与 Django 安全 Cookie 设置保持一致：开启 SESSION_COOKIE_SECURE 即视为 HTTPS。
+    纯 HTTP 直访部署（DJANGO_SECURE_SSL=False）下恒为 http。
+    """
+    from django.conf import settings
+    return 'https' if getattr(settings, 'SESSION_COOKIE_SECURE', False) else 'http'
+
+
+def get_site_url():
+    """返回完整站点根 URL，如 http://47.113.150.22。"""
+    return '{scheme}://{domain}'.format(
+        scheme=get_site_scheme(),
+        domain=get_current_site().domain,
+    )
+
+
 class CommonMarkdown:
     @staticmethod
     def _convert_markdown(value):

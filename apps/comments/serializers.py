@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.accounts.models import BlogUser
-from apps.comments.models import Comment, CommentReaction
+from apps.comments.models import Comment
 
 
 class CommentAuthorSerializer(serializers.ModelSerializer):
@@ -41,10 +41,3 @@ class CommentDetailSerializer(CommentSerializer):
         if user.is_authenticated:
             return obj.get_reactions_summary(user)
         return obj.get_reactions_summary(None)
-
-
-class CommentReactionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CommentReaction
-        fields = ['id', 'comment', 'user', 'reaction_type', 'created_at']
-        read_only_fields = ['id', 'created_at']

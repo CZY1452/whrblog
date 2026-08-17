@@ -2,16 +2,15 @@ import logging
 
 from django.utils.translation import gettext_lazy as _
 
-from core.utils import get_current_site
+from core.utils import get_site_url
 from core.utils import send_email
 
 logger = logging.getLogger(__name__)
 
 
 def send_comment_email(comment):
-    site = get_current_site().domain
     subject = _('Thanks for your comment')
-    article_url = f"https://{site}{comment.article.get_absolute_url()}"
+    article_url = f"{get_site_url()}{comment.article.get_absolute_url()}"
     html_content = _("""<p>Thank you very much for your comments on this site</p>
                     You can visit <a href="%(article_url)s" rel="bookmark">%(article_title)s</a>
                     to review your comments,

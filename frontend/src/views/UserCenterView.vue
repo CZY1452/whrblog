@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { apiGet, apiPost, apiPatch } from '../api.js';
 import { setSeo } from '../seo.js';
 import { useAuthStore } from '../stores/auth.js';

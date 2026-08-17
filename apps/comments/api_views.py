@@ -9,7 +9,6 @@ from apps.blog.models import Article
 from apps.comments.models import Comment, CommentReaction
 from apps.comments.serializers import (
     CommentDetailSerializer,
-    CommentReactionSerializer,
     CommentSerializer,
 )
 

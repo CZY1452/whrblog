@@ -9,7 +9,6 @@ from django.utils.translation import gettext_lazy as _
 from slugify import slugify
 
 from core.utils import cache_decorator
-from core.utils import get_current_site
 from core.constants import CacheTimeout
 
 
@@ -35,10 +34,8 @@ class BaseModel(models.Model):
         super().save(*args, **kwargs)
 
     def get_full_url(self):
-        site = get_current_site().domain
-        url = "https://{site}{path}".format(site=site,
-                                            path=self.get_absolute_url())
-        return url
+        from core.utils import get_site_url
+        return f"{get_site_url()}{self.get_absolute_url()}"
 
     class Meta:
         abstract = True
