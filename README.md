@@ -113,6 +113,7 @@ whrblog/
 ```bash
 # 1. 复制环境变量模板（内置纯 Docker 开发默认值，无需修改即可跑起来）
 cp .env.example .env
+# cp .env.prod .env（私人生产环境没有进行上传）
 
 # 2. 构建并启动全部 7 个服务（MySQL/Redis/ES/后端/前端/Nginx/Worker）
 docker compose up -d --build
