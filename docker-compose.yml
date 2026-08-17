@@ -115,7 +115,7 @@ services:
       - whrblog-net
 
   # ----------------------------------------------------------
-  #  Nginx 反向代理（统一入口，处理 SSL / 静态资源 / API 转发）
+  #  Nginx 反向代理（统一入口，处理静态资源 / API 转发）
   # ----------------------------------------------------------
   nginx:
     image: nginx:1.27-alpine
@@ -123,17 +123,12 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
       - frontend_dist:/usr/share/nginx/html:ro
       - static_data:/var/www/static:ro
       - media_data:/var/www/media:ro
-      - certbot_conf:/etc/letsencrypt:ro
-      - certbot_www:/var/www/certbot:ro
-      # HTTPS 配置模板：证书签发后由 deploy/enable-https.sh 激活
-      - ./deploy/nginx/https.conf.template:/etc/nginx/https.conf.template:ro
     depends_on:
       backend:
         condition: service_healthy
@@ -212,32 +207,6 @@ services:
       retries: 5
       start_period: 60s
 
-  # ----------------------------------------------------------
-  #  Certbot（Let's Encrypt SSL 证书签发 + 自动续期）
-  #  首次/续期均使用 webroot 模式（nginx 已在 :80 暴露 /.well-known/acme-challenge）
-  #  证书签发后，在 nginx 容器内执行 deploy/enable-https.sh 激活 443 监听
-  #  本地开发（域名未指向本机）时 certonly 会失败，但用 || true 不影响其他服务
-  # ----------------------------------------------------------
-  certbot:
-    image: certbot/certbot:latest
-    container_name: whrblog-certbot
-    environment:
-      CERTBOT_EMAIL: ${CERTBOT_EMAIL:-admin@whr.hopto.org}
-    volumes:
-      - certbot_conf:/etc/letsencrypt
-      - certbot_www:/var/www/certbot
-    entrypoint: >-
-      /bin/sh -c 'trap exit TERM;
-      certbot certonly --webroot -w /var/www/certbot
-      --email "$$CERTBOT_EMAIL" --agree-tos --no-eff-email
-      -d whr.hopto.org --non-interactive || true;
-      while :; do certbot renew --webroot -w /var/www/certbot; sleep 12h; done'
-    depends_on:
-      nginx:
-        condition: service_healthy
-    networks:
-      - whrblog-net
-
 volumes:
   mysql_data:
     driver: local
@@ -251,9 +220,7 @@ volumes:
     driver: local
   frontend_dist:
     driver: local
-  certbot_conf:
     driver: local
-  certbot_www:
     driver: local
 
 networks:
