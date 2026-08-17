@@ -220,8 +220,6 @@ volumes:
     driver: local
   frontend_dist:
     driver: local
-    driver: local
-    driver: local
 
 networks:
   whrblog-net:
