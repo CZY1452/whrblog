@@ -251,9 +251,9 @@ class SearchViewSet(viewsets.ViewSet):
 
 
 def _render_sidebar_markdown(content):
-    """将侧边栏公告内容的 markdown 渲染为 HTML（复用 sidebar_markdown 过滤逻辑）"""
-    from core.utils import CommonMarkdown
-    return CommonMarkdown.get_markdown(content)
+    """将侧边栏公告内容的 markdown 渲染并清洗为 HTML（复用 sidebar_markdown 过滤逻辑）"""
+    from core.utils import CommonMarkdown, sanitize_html
+    return sanitize_html(CommonMarkdown.get_markdown(content))
 
 
 class SidebarAggregateView(APIView):
@@ -268,6 +268,9 @@ class SidebarAggregateView(APIView):
         from apps.blog.models import LinkShowType
 
         linktype = request.query_params.get(self.linktype_param, 'p')
+        # 校验 linktype 白名单，防止非法值污染缓存键空间
+        if linktype not in LinkShowType.values:
+            linktype = 'p'
         cache_key = f'sidebar_aggregate_{linktype}'
         cached = cache.get(cache_key)
         if cached is not None:
@@ -535,6 +538,18 @@ class SiteInfoView(APIView):
         })
 
 
+def _quote_yaml(value):
+    """将值安全包进 YAML 双引号字符串：转义反斜杠/双引号，压缩换行防注入"""
+    return str(value).replace('\\', '\\\\').replace('"', '\\"') \
+        .replace('\r', ' ').replace('\n', ' ')
+
+
+def _safe_filename(name):
+    """将标题转为安全的文件名：替换路径分隔符等非法字符"""
+    import re
+    return re.sub(r'[\\/:*?"<>|\r\n]', '_', name)
+
+
 def _article_to_markdown(article):
     """将文章实例转换为带 YAML front matter 的 Markdown 字符串"""
     tags = [t.name for t in article.tags.all()]
@@ -542,10 +557,10 @@ def _article_to_markdown(article):
 
     lines = [
         '---',
-        f'title: "{article.title}"',
-        f'date: "{pub_time}"',
-        f'category: "{article.category.name}"',
-        f'tags: [{", ".join(tags)}]',
+        f'title: "{_quote_yaml(article.title)}"',
+        f'date: "{_quote_yaml(pub_time)}"',
+        f'category: "{_quote_yaml(article.category.name)}"',
+        f'tags: [{", ".join(_quote_yaml(t) for t in tags)}]',
         '---',
         '',
         f'# {article.title}',
@@ -610,7 +625,7 @@ class ArticleExportView(APIView):
         with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zf:
             for article in articles:
                 md = _article_to_markdown(article)
-                zf.writestr(f'{article.title}.md', md.encode('utf-8'))
+                zf.writestr(f'{_safe_filename(article.title)}.md', md.encode('utf-8'))
 
         buf.seek(0)
         response = HttpResponse(buf.read(), content_type='application/zip')

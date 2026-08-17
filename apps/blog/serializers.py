@@ -145,7 +145,7 @@ class ArticleListSerializer(serializers.ModelSerializer):
 class ArticleDetailSerializer(ArticleListSerializer):
     body = serializers.SerializerMethodField()
     toc = serializers.SerializerMethodField()
-    comment_count = serializers.IntegerField(source='comment_set.count', read_only=True)
+    comment_count = serializers.SerializerMethodField()
     prev_article = serializers.SerializerMethodField()
     next_article = serializers.SerializerMethodField()
     seo_title = serializers.SerializerMethodField()
@@ -163,10 +163,13 @@ class ArticleDetailSerializer(ArticleListSerializer):
         from core.utils import CommonMarkdown, sanitize_html
         from core.plugin_manage import hooks
         from core.plugin_manage.hook_constants import ARTICLE_CONTENT_HOOK_NAME
-        html = CommonMarkdown.get_markdown(obj.body)
+        # 先渲染 Markdown 再清洗（防 XSS），最后交给插件过滤器处理：
+        # 插件产物（外部链接 target、图片懒加载属性等）是管理员可信代码，
+        # 若再走一遍 bleach 白名单，注入的 target/loading/style 等会被剥掉导致插件失效。
+        html = sanitize_html(CommonMarkdown.get_markdown(obj.body))
         context = self.context.get('request')
         article = obj
-        html = hooks.apply_filters(
+        return hooks.apply_filters(
             ARTICLE_CONTENT_HOOK_NAME,
             html,
             article=article,
@@ -174,7 +177,10 @@ class ArticleDetailSerializer(ArticleListSerializer):
             context=self.context,
             is_summary=False,
         )
-        return sanitize_html(html)
+
+    def get_comment_count(self, obj):
+        # 与评论接口保持一致：只统计已启用（审核通过）的评论
+        return obj.comment_set.filter(is_enable=True).count()
 
     def get_toc(self, obj):
         from core.utils import CommonMarkdown

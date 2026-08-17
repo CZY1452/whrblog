@@ -6,7 +6,7 @@ from django.db.models.signals import post_save, post_delete, m2m_changed
 from django.dispatch import receiver
 
 from apps.accounts.models import BlogUser
-from apps.blog.models import Article, Category, Tag
+from apps.blog.models import Article, BlogSettings, Category, Tag
 from apps.comments.models import Comment
 from core.tasks import (
     reindex_articles_for_category,
@@ -103,6 +103,17 @@ def comment_post_save(sender, instance, created, raw, using, update_fields, **kw
         send_comment_email.delay(instance.id)
     except Exception:
         logger.exception('评论通知邮件入队失败，忽略')
+
+
+@receiver(post_save, sender=BlogSettings)
+@receiver(post_delete, sender=BlogSettings)
+def blog_settings_changed(sender, instance, **kwargs):
+    """博客设置变更后清理 'get_blog_setting' 缓存，避免修改后最长 10 小时不生效"""
+    try:
+        cache.delete('get_blog_setting')
+        cache.delete('seo_processor')
+    except Exception:
+        logger.exception('清理博客设置缓存失败，忽略')
 
 
 @receiver(post_save, sender=Article)
