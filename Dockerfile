@@ -5,7 +5,11 @@
 FROM python:3.12-slim
 
 # 系统依赖（mysqlclient 编译需要）
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN sed -i \
+        -e 's|deb.debian.org|mirrors.tuna.tsinghua.edu.cn|g' \
+        -e 's|security.debian.org|mirrors.tuna.tsinghua.edu.cn|g' \
+        /etc/apt/sources.list.d/debian.sources \
+    && apt-get update && apt-get install -y --no-install-recommends \
         gcc \
         default-libmysqlclient-dev \
         pkg-config \
@@ -16,6 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
+ENV PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
 WORKDIR /app
 
 # 先复制依赖文件，利用 Docker 缓存层
