@@ -18,7 +18,7 @@
 
 ## 三、准备生产环境变量
 
-    cp deploy/.env.prod .env
+    cp .env.prod .env
 
 然后编辑 .env，至少修改以下【必改】项：
 
@@ -87,13 +87,13 @@ Nginx 使用 server_name _; 通配，任何指向本机 IP 的请求都会被正
 ## 九、目录结构（部署相关）
 
     whrblog/
-    ├── docker-compose.yml          # 编排（已移除证书签发 / 443 相关配置）
+    ├── docker-compose.yml          # 编排
+    ├── .env.prod                   # 生产环境变量模板（本指南使用）
     ├── deploy/
     │   ├── nginx/
     │   │   ├── nginx.conf          # Nginx 主配置（HTTP）
     │   │   └── conf.d/
     │   │       └── default.conf    # 站点配置（server_name _，纯 HTTP）
-    │   ├── .env.prod               # 生产环境变量模板（本指南使用）
     │   ├── gunicorn.conf.py        # Gunicorn 配置
     │   ├── entrypoint.sh           # 容器启动入口（collectstatic + 迁移 + 种子）
     │   ├── es/                     # ES 镜像构建（含 IK 分词）

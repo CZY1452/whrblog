@@ -139,7 +139,7 @@ docker compose exec backend python manage.py createsuperuser
 # 1. 安装后端依赖
 pip install -r requirements.txt
 
-# 2. 配置 .env（参考 deploy/.env.prod）并启动迁移与后端
+# 2. 配置 .env（参考 .env.prod）并启动迁移与后端
 python manage.py migrate
 python manage.py runserver
 

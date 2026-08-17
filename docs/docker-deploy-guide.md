@@ -89,7 +89,7 @@ backend settings.py：读 DJANGO_MYSQL_* / REDIS_* 连库
 ```
 
 ### 双轨默认值
-- 提供 `.env`（由 `.env.example` 或 `deploy/.env.prod` 复制而来，已被 .gitignore 忽略）
+- 提供 `.env`（由 `.env.example` 或 `.env.prod` 复制而来，已被 .gitignore 忽略）
 - compose 里所有敏感变量写 `"${VAR:-default}"`，没 `.env` 也能跑（开发默认值）
 
 ### 关键前提：**初始化只在空卷时执行**
@@ -151,7 +151,7 @@ ENV PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
 ## 六、完整执行流（含初始化）
 
 ```bash
-cp .env.example .env                 # 生产用 cp deploy/.env.prod .env
+cp .env.example .env                 # 生产用 cp .env.prod .env
 docker compose build                 # 先打镜像；卡住加 --progress=plain
 docker compose up -d                 # 再起；多服务开始时 nginx 可能被依赖链暂缓
 docker compose ps                    # 检查全部 healthy

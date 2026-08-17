@@ -451,7 +451,7 @@ sequenceDiagram
 
 ### 配置示例文件
 
-- 后端：`.env.example`、`deploy/.env.prod`（生产模板）。
+- 后端：`.env.example`、`.env.prod`（生产模板）。
 - 前端：无 `.env` 文件；描述性配置都在 `vite.config.js`。
 
 ---
@@ -551,7 +551,7 @@ sequenceDiagram
 ### 生产部署（`deploy/DEPLOY.md` 摘要）
 
 ```bash
-cp deploy/.env.prod .env           # 改 SECRET_KEY / 密码 / ALLOWED_HOSTS / CSRF_TRUSTED_ORIGINS / EMAIL_*
+cp .env.prod .env           # 改 SECRET_KEY / 密码 / ALLOWED_HOSTS / CSRF_TRUSTED_ORIGINS / EMAIL_*
 docker compose up -d --build
 docker compose exec backend python manage.py createsuperuser
 ```

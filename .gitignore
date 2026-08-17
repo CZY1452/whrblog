@@ -33,8 +33,9 @@ collectedstatic/
 db.sqlite3
 
 # -------------------- 环境变量（含密钥，严禁提交） --------------------
-# 真实环境变量文件；deploy/.env.prod 是模板（占位符），保留提交
+# 真实环境变量文件；根目录 .env.prod 是生产模板（含随机密码），亦不提交
 .env
+.env.prod
 .env.local
 .env.*.local
 

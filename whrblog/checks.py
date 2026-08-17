@@ -18,7 +18,7 @@ def check_insecure_development_config(app_configs, **kwargs):
     if settings.DEBUG and "*" in allowed:
         errors.append(Warning(
             "DEBUG=True 且 ALLOWED_HOSTS 包含 '*' —— 这是开发配置，严禁用于生产环境。",
-            hint="生产部署请使用 deploy/.env.prod 模板，显式设置 "
+            hint="生产部署请使用 .env.prod 模板，显式设置 "
                  "DJANGO_DEBUG=False 与具体公网 IP（纯 HTTP 直访，无需域名，"
                  "对应 DJANGO_ALLOWED_HOSTS）。",
             id="whrblog.W001",
