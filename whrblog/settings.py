@@ -437,8 +437,3 @@ ACTIVE_PLUGINS = [
     'external_links',
     'image_lazy_loading',
 ]
-
-# ==================== 生产安全守卫 ====================
-# 显式导入，确保 whrblog.W001 / whrblog.E001 两个 system check 必定被注册
-# （Django 对部分项目级 app 的 checks 模块不会自动发现，此处兜底）。
-import whrblog.checks  # noqa: E402,F401
