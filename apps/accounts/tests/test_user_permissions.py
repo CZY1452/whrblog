@@ -1,5 +1,5 @@
 """
-Test cases for user permissions and activation business logic
+用户权限与激活业务逻辑测试用例
 包括用户权限管理、激活/停用等核心业务逻辑
 """
 from django.test import TestCase

@@ -1,4 +1,4 @@
-"""whrblog URL Configuration
+"""WhrBlog URL 配置
 
 纯 API 架构：所有业务数据由 DRF 接口提供，前端为独立托管的 Vue SPA。
 仅保留：API、admin、sitemap、健康检查、静态资源。

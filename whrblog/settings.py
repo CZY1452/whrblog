@@ -1,5 +1,5 @@
 """
-Django settings for whrblog project.
+WhrBlog 项目的 Django 设置。
 
 由 Django 1.10.2 的 'django-admin startproject' 命令生成。
 

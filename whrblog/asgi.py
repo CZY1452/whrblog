@@ -1,5 +1,5 @@
 """
-ASGI config for whrblog project.
+WhrBlog 项目的 ASGI 配置。
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 

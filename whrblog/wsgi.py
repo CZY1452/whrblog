@@ -1,5 +1,5 @@
 """
-WSGI config for whrblog project.
+WhrBlog 项目的 WSGI 配置。
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 

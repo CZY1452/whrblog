@@ -4,7 +4,7 @@ from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 
 
-# Create your models here.
+# 在此定义模型
 
 class BlogUser(AbstractUser):
     nickname = models.CharField(_('昵称'), max_length=100, blank=True)

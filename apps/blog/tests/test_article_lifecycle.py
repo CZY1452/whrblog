@@ -1,5 +1,5 @@
 """
-Test cases for article lifecycle
+文章生命周期业务测试用例
 包括文章状态转换、时间戳、slug生成以及遗留的管理命令测试
 """
 from django.test import TestCase, Client, RequestFactory

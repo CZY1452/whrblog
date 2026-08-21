@@ -42,6 +42,7 @@ class RegisterAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """注册：校验邮箱验证码后创建并激活用户（验证码正确即 is_active=True）"""
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -68,6 +69,7 @@ class LoginAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """登录：校验用户名密码并建立会话；remember 为 True 时延长会话有效期"""
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = authenticate(
@@ -106,6 +108,7 @@ class VerifyEmailAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """邮箱激活：按用户 id + 验证码激活未激活账号（SPA /verify-email 调用）"""
         user_id = request.data.get('id')
         code = request.data.get('code')
         if not user_id or not code:
@@ -128,6 +131,7 @@ class LogoutAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        """登出：销毁当前会话并清除 logged_user Cookie"""
         logout(request)
         delete_sidebar_cache()
         response = Response({'success': True})
@@ -140,9 +144,11 @@ class UserInfoAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        """获取当前登录用户信息"""
         return Response(BlogUserSerializer(request.user).data)
 
     def patch(self, request):
+        """更新当前用户昵称（仅 nickname 字段）"""
         serializer = UpdateProfileSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         if 'nickname' in serializer.validated_data:
@@ -156,6 +162,7 @@ class AvatarUploadAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        """上传头像：2MB 限制、格式白名单、Pillow 重新转码后保存并更新用户头像"""
         file = request.FILES.get('avatar')
         if not file:
             return Response({'error': '未选择头像文件'}, status=status.HTTP_400_BAD_REQUEST)
@@ -189,6 +196,7 @@ class EmailThrottle(throttling.SimpleRateThrottle):
     rate = '3/hour'
 
     def get_cache_key(self, request, view):
+        """按 IP 生成邮箱类限流缓存键（重发注册码/忘记密码发码共用）"""
         return self.cache_format % {
             'scope': self.scope,
             'ident': self.get_ident(request),
@@ -201,6 +209,7 @@ class PasswordResetThrottle(throttling.SimpleRateThrottle):
     rate = '10/hour'
 
     def get_cache_key(self, request, view):
+        """按 IP 生成密码重置限流缓存键（防验证码暴力破解）"""
         return self.cache_format % {
             'scope': self.scope,
             'ident': self.get_ident(request),
@@ -213,6 +222,7 @@ class RegisterCodeThrottle(throttling.SimpleRateThrottle):
     rate = '20/hour'
 
     def get_cache_key(self, request, view):
+        """按 IP 生成注册验证码限流缓存键"""
         return self.cache_format % {
             'scope': self.scope,
             'ident': self.get_ident(request),
@@ -225,6 +235,7 @@ class SendRegisterCodeAPIView(APIView):
     throttle_classes = [RegisterCodeThrottle]
 
     def post(self, request):
+        """发送注册验证码：校验邮箱格式与未注册、1 分钟冷却与 IP 限流后发码"""
         email = (request.data.get('email') or '').strip()
         if not email or '@' not in email or '.' not in email.split('@')[-1]:
             return Response({'error': '请填写正确的邮箱'}, status=status.HTTP_400_BAD_REQUEST)
@@ -248,6 +259,7 @@ class ResendVerifyEmailAPIView(APIView):
     throttle_classes = [EmailThrottle]
 
     def post(self, request):
+        """重新发送注册验证码：给未激活账号重新发码（1 分钟冷却 + IP 限流）"""
         user_id = request.data.get('id')
         if not user_id:
             return Response({'error': '参数缺失'}, status=status.HTTP_400_BAD_REQUEST)
@@ -272,6 +284,7 @@ class ChangeEmailCodeThrottle(throttling.SimpleRateThrottle):
     rate = '20/hour'
 
     def get_cache_key(self, request, view):
+        """按 IP 生成改邮箱验证码限流缓存键"""
         return self.cache_format % {
             'scope': self.scope,
             'ident': self.get_ident(request),
@@ -284,6 +297,7 @@ class SendChangeEmailCodeAPIView(APIView):
     throttle_classes = [ChangeEmailCodeThrottle]
 
     def post(self, request):
+        """发送改邮箱验证码：校验新邮箱未占用、1 分钟冷却与 IP 限流后发码"""
         new_email = (request.data.get('new_email') or '').strip()
         if not new_email or '@' not in new_email or '.' not in new_email.split('@')[-1]:
             return Response({'error': '请填写正确的邮箱'}, status=status.HTTP_400_BAD_REQUEST)
@@ -306,6 +320,7 @@ class ChangeEmailAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        """修改邮箱：校验新邮箱验证码正确后更新用户邮箱（验证码即删防复用）"""
         serializer = ChangeEmailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         new_email = serializer.validated_data['new_email']
@@ -329,6 +344,7 @@ class ForgetPasswordAPIView(APIView):
     throttle_classes = [PasswordResetThrottle]
 
     def post(self, request):
+        """忘记密码：校验邮箱验证码后重置密码（限流 10/hour）"""
         serializer = ForgetPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data['email']
@@ -353,6 +369,7 @@ class ForgetPasswordEmailCodeAPIView(APIView):
     throttle_classes = [EmailThrottle]
 
     def post(self, request):
+        """发送密码重置验证码到注册邮箱"""
         serializer = VerifyEmailCodeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data['email']
@@ -367,6 +384,7 @@ class ChangePasswordAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        """修改密码：校验原密码正确后设置新密码"""
         serializer = ChangePasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = request.user

@@ -1,5 +1,5 @@
 """
-Test cases for comment creation and article status relationship
+评论创建与文章状态关系测试用例hip
 包括评论创建业务逻辑和评论与文章状态的关系
 """
 from django.test import TestCase

@@ -4,7 +4,7 @@ from django.contrib.auth.forms import UserChangeForm
 from django.contrib.auth.forms import UsernameField
 from django.utils.translation import gettext_lazy as _
 
-# Register your models here.
+# 在此注册模型
 from .models import BlogUser
 
 
@@ -17,7 +17,8 @@ class BlogUserCreationForm(forms.ModelForm):
         fields = ('email',)
 
     def clean_password2(self):
-        # Check that the two password entries match
+        """校验两次输入的密码一致"""
+        # 校验两次输入的密码一致
         password1 = self.cleaned_data.get("password1")
         password2 = self.cleaned_data.get("password2")
         if password1 and password2 and password1 != password2:
@@ -25,7 +26,8 @@ class BlogUserCreationForm(forms.ModelForm):
         return password2
 
     def save(self, commit=True):
-        # Save the provided password in hashed format
+        """保存用户：密码加密后写入（新增时）；未修改密码则保持原值"""
+        # 将密码以哈希格式保存
         user = super().save(commit=False)
         user.set_password(self.cleaned_data["password1"])
         if commit:

@@ -1,5 +1,5 @@
 """
-Test cases for article permissions
+文章权限业务测试用例
 包括文章权限控制、用户角色与编辑权限等核心业务逻辑
 """
 from django.test import TestCase, Client

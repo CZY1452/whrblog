@@ -1,5 +1,5 @@
 """
-Test cases for article metadata
+文章元数据业务测试用例
 包括文章评论状态、文章类型、分类标签等核心业务逻辑
 """
 from django.test import TestCase, Client

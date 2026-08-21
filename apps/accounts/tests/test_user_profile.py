@@ -1,5 +1,5 @@
 """
-Test cases for user profile, query, and deletion business logic
+用户资料、查询与删除业务逻辑测试用例
 包括用户资料管理、查询操作、删除等核心业务逻辑
 """
 from django.test import TestCase

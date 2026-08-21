@@ -10,7 +10,7 @@ _loaded_plugins = []
 
 def load_plugins():
     """
-    Dynamically loads and initializes plugins from the 'plugins' directory.
+    动态加载并初始化 plugins 目录下的插件.
     This function is intended to be called when the Django app registry is ready.
     """
     global _loaded_plugins

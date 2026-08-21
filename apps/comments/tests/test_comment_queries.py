@@ -1,5 +1,5 @@
 """
-Test cases for comment queries and deletion
+评论查询与删除测试用例
 包括评论查询和删除相关测试
 """
 from django.test import TestCase

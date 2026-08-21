@@ -1,5 +1,5 @@
 """
-Test cases for core utility functions
+核心工具函数测试用例
 包括 Markdown 渲染等工具函数
 """
 from django.test import TestCase

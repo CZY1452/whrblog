@@ -1,5 +1,5 @@
 """
-Test cases for user authentication and password management business logic
+用户认证与密码管理业务逻辑测试用例
 包括用户认证、密码管理以及账户验证等核心业务逻辑
 """
 from django.test import TestCase, Client, RequestFactory

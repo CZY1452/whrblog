@@ -1,5 +1,5 @@
 """
-Test cases for comment reply and nested structure
+评论回复与嵌套结构测试用例
 包括评论回复和嵌套结构相关测试
 """
 from django.test import TestCase

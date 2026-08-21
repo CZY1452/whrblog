@@ -1,5 +1,5 @@
 """
-Test cases for user registration business logic
+用户注册业务逻辑测试用例
 包括用户注册、创建、默认状态等核心业务逻辑
 """
 from django.test import TestCase

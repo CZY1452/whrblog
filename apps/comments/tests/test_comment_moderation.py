@@ -1,5 +1,5 @@
 """
-Test cases for comment moderation workflow
+评论审核工作流测试用例
 包括评论审核工作流相关测试
 """
 from django.test import TestCase
