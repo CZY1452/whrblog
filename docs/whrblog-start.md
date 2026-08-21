@@ -72,8 +72,7 @@ whrblog/
 ├── apps/                     # 业务应用（Django 多应用架构）
 │   ├── blog/                 # 文章/分类/标签/设置/搜索/图床（viewsets + APIView）
 │   ├── accounts/             # 用户/注册/登录/验证码/头像（APIView + 邮件）
-│   ├── comments/             # 评论/回复/Emoji 反应（ViewSet）
-│   └── servermanager/        # 后台命令库、邮件发送日志
+│   └── comments/             # 评论/回复/Emoji 反应（ViewSet）
 │
 ├── core/                     # 公共能力层
 │   ├── utils.py              # 缓存封装/Markdown 渲染/邮件/验证码生成
@@ -187,8 +186,6 @@ whrblog/
 | `BlogSettings` | apps/blog | 站点配置（**单例语义**，仅 `clean()` 约束非 DB 约束）：site_name、SEO、配色、广告、公安备案等 |
 | `Comment` | apps/comments | 评论：`body`（≤300）、`author` FK、`article` FK、`parent_comment` 自引用、`is_enable`（审核） |
 | `CommentReaction` | apps/comments | 评论表情：`comment`+`user`+`reaction_type` 唯一（8 种 emoji） |
-| `commands` | apps/servermanager | 后台命令库（标题/命令/描述） |
-| `EmailSendLog` | apps/servermanager | 邮件发送日志 |
 
 **表关系**：Category 自关联（父子分类）；Article→Category 多对一、Article→Tag 多对多（中间表 `blog_article_tags`）、Article→User 多对一；Comment→Article/User 多对一、自关联（回复树）；CommentReaction→Comment/User 多对一。
 
@@ -328,7 +325,7 @@ sequenceDiagram
 | 项目 | 说明 |
 |------|------|
 | 测试框架 | pytest + pytest-django（`pytest.ini`：`--reuse-db`、`--tb=short`） |
-| 测试位置 | `core/tests/`、`apps/accounts/tests/`、`apps/blog/tests/`、`apps/comments/tests/`、`apps/servermanager/tests/` |
+| 测试位置 | `core/tests/`、`apps/accounts/tests/`、`apps/blog/tests/`、`apps/comments/tests/` |
 | 运行命令 | `pytest`（当前 187 passed，README badge） |
 | 覆盖率 | `coverage` 已装（配置未发现强制阈值，待确认） |
 | 前端测试 | 未发现前端单测框架（待确认） |

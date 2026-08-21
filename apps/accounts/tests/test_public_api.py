@@ -49,23 +49,44 @@ class LoginApiTest(BaseTestCase):
 class RegisterApiTest(BaseTestCase):
     """注册 API"""
 
-    def test_register_creates_inactive_user(self):
+    def test_register_with_code_activates_user(self):
+        """新注册流程：先发验证码，携带 code 注册，校验通过即激活"""
+        from apps.accounts.utils import set_reg_code
+        email = 'newbie@test.com'
+        set_reg_code(email, '123456')  # 模拟邮箱已收到验证码（写入缓存）
         url = reverse('accounts:api-register')
         response = self.client.post(url, data=json.dumps({
             'username': 'newbie',
-            'email': 'newbie@test.com',
+            'email': email,
             'nickname': '新用户',
             'password': 'testpass123',
             'password_confirm': 'testpass123',
+            'code': '123456',
         }), content_type='application/json')
         self.assertEqual(response.status_code, 201)
         data = response.json()
         self.assertTrue(data['success'])
-        self.assertEqual(data['user']['username'], 'newbie')
-        # is_active 不在序列化器字段中，通过数据库验证
+        # is_active 不在序列化器字段中，通过数据库验证（验证码通过即激活）
         from apps.accounts.models import BlogUser
         new_user = BlogUser.objects.get(username='newbie')
-        self.assertFalse(new_user.is_active)
+        self.assertTrue(new_user.is_active)
+
+    def test_register_wrong_code_rejected(self):
+        """注册时验证码错误应返回 400 且不创建用户"""
+        from apps.accounts.utils import set_reg_code
+        email = 'wrongcode@test.com'
+        set_reg_code(email, '123456')
+        url = reverse('accounts:api-register')
+        response = self.client.post(url, data=json.dumps({
+            'username': 'wrongcode',
+            'email': email,
+            'password': 'testpass123',
+            'password_confirm': 'testpass123',
+            'code': '000000',
+        }), content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        from apps.accounts.models import BlogUser
+        self.assertFalse(BlogUser.objects.filter(username='wrongcode').exists())
 
     def test_register_password_mismatch(self):
         url = reverse('accounts:api-register')

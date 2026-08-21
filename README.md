@@ -84,7 +84,6 @@ whrblog/
 │   ├── blog/              # 文章、分类、标签、站点设置、搜索、上传/导入导出
 │   ├── comments/          # 评论、回复、表情反应
 │   ├── accounts/          # 用户、注册登录、邮箱验证、账号中心
-│   └── servermanager/     # 服务器命令备忘、邮件发送日志
 ├── core/                  # 通用能力（缓存、ES 客户端、插件管理、信号、分页、sitemap）
 ├── plugins/               # 内置内容过滤器插件
 │   ├── external_links/      # 外部链接处理
@@ -161,7 +160,7 @@ docker compose exec -T backend pytest
 pytest
 ```
 
-全量测试覆盖 core、accounts、blog、comments、servermanager 五个模块，含插件系统、公开 API、权限、草稿、导入导出、评论工作流等。
+全量测试覆盖 core、accounts、blog、comments 四个模块，含插件系统、公开 API、权限、草稿、导入导出、评论工作流等。
 
 ## 🔌 API 概览
 

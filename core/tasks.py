@@ -83,7 +83,7 @@ def send_comment_email(comment_id):
 
 @shared_task
 def send_email(emailto, title, content):
-    """通用邮件发送（含 EmailSendLog 记录）"""
+    """通用邮件发送"""
     if getattr(settings, 'TESTING', False):
         return
 
@@ -96,19 +96,8 @@ def send_email(emailto, title, content):
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=emailto)
         msg.content_subtype = "html"
-
-        from apps.servermanager.models import EmailSendLog
-        log = EmailSendLog()
-        log.title = title
-        log.content = content
-        log.emailto = ','.join(emailto)
-
-        try:
-            result = msg.send()
-            log.send_result = result > 0
-        except Exception as e:
-            logger.error(f"失败邮箱号: {emailto}, {e}")
-            log.send_result = False
-        log.save()
+        result = msg.send()
+        if not result:
+            logger.error('邮件发送返回 0：%s', emailto)
     except Exception as e:
         logger.error('邮件发送任务异常: %s', e)

@@ -100,7 +100,6 @@ INSTALLED_APPS = [
     'apps.blog.apps.BlogConfig',
     'apps.accounts.apps.AccountsConfig',
     'apps.comments.apps.CommentsConfig',
-    'apps.servermanager.apps.ServermanagerConfig',
     'compressor',
     'whrblog',
 ]

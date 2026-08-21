@@ -9,8 +9,6 @@ from apps.blog.models import *
 from apps.comments.admin import *
 from apps.comments.models import *
 from core.logentryadmin import LogEntryAdmin
-from apps.servermanager.admin import *
-from apps.servermanager.models import *
 
 
 class WhrBlogAdminSite(AdminSite):
@@ -32,9 +30,6 @@ admin_site.register(Tag, TagAdmin)
 admin_site.register(Links, LinksAdmin)
 admin_site.register(SideBar, SideBarAdmin)
 admin_site.register(BlogSettings, BlogSettingsAdmin)
-
-admin_site.register(commands, CommandsAdmin)
-admin_site.register(EmailSendLog, EmailSendLogAdmin)
 
 admin_site.register(BlogUser, BlogUserAdmin)
 
