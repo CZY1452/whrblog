@@ -52,4 +52,8 @@ urlpatterns = [
     re_path(r'^change_email/(?P<id>\d+)/(?P<sign>[\w:-]+)\.html$',
             views.change_email_confirm,
             name='change_email_confirm'),
+    # 邮件链接跳回：注册邮箱激活 → 服务端直接验证（兜底，无需 SPA 接管）
+    path(r'verify-email',
+         views.verify_email_confirm,
+         name='verify_email_confirm'),
 ]
