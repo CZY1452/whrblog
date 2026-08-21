@@ -33,10 +33,11 @@ class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True)
     email = serializers.EmailField(required=True)
+    code = serializers.CharField(write_only=True)
 
     class Meta:
         model = BlogUser
-        fields = ['username', 'email', 'nickname', 'password', 'password_confirm']
+        fields = ['username', 'email', 'nickname', 'password', 'password_confirm', 'code']
 
     def validate_username(self, value):
         if BlogUser.objects.filter(username=value).exists():
@@ -56,6 +57,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         import hashlib
         validated_data.pop('password_confirm')
+        validated_data.pop('code', None)  # 验证码仅用于校验，不入库
         validated_data['password'] = make_password(validated_data['password'])
         validated_data['is_active'] = False
         validated_data['source'] = 'Register'

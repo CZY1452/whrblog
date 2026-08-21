@@ -58,12 +58,55 @@ export function extractError(payload) {
   return '操作失败';
 }
 
+/**
+ * 解析限流等待秒数。
+ * 优先取 Retry-After 响应头；兜底从 DRF 默认文案
+ * 「... Expected available in 2774 seconds.」中提取数字。
+ */
+function parseThrottleWait(res, payload) {
+  if (res.headers && res.headers.get) {
+    const ra = res.headers.get('Retry-After');
+    if (ra && /^\d+$/.test(ra.trim())) return parseInt(ra.trim(), 10);
+  }
+  const text = (payload && (payload.detail || payload.error)) || '';
+  const m = String(text).match(/(\d+)\s*seconds?/i);
+  if (m) return parseInt(m[1], 10);
+  return null;
+}
+
+/**
+ * 将后端错误统一包装为带状态码的 Error。
+ * 针对 429 限流：解析等待秒数，转换为「请求过于频繁，请稍后约 X 分钟再试」友好文案；
+ * 若后端已返回友好文案（如自定义 1 分钟冷却提示），则保留原文。
+ * err.wait 在能解析出等待时长时存在，供前端进入冷却倒计时。
+ */
+export function buildApiError(res, payload) {
+  if (res.status === 429) {
+    const wait = parseThrottleWait(res, payload);
+    if (wait != null) {
+      const msg = wait < 60
+        ? `请求过于频繁，请稍后约 ${wait} 秒再试`
+        : `请求过于频繁，请稍后约 ${Math.ceil(wait / 60)} 分钟再试`;
+      const err = new Error(msg);
+      err.status = 429;
+      err.wait = wait;
+      return err;
+    }
+    const err = new Error(extractError(payload));
+    err.status = 429;
+    return err;
+  }
+  const err = new Error(extractError(payload));
+  err.status = res.status;
+  return err;
+}
+
 export async function apiGet(url) {
   const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
   handle401(res);
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(extractError(err));
+    throw buildApiError(res, err);
   }
   return res.json();
 }
@@ -75,7 +118,7 @@ export async function apiPost(url, data, isForm = false) {
   const res = await fetch(url, opts);
   handle401(res);
   const payload = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(extractError(payload));
+  if (!res.ok) throw buildApiError(res, payload);
   return payload;
 }
 
@@ -83,7 +126,7 @@ export async function apiPatch(url, data) {
   const res = await fetch(url, { method: 'PATCH', headers: jsonHeaders(), body: JSON.stringify(data) });
   handle401(res);
   const payload = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(extractError(payload));
+  if (!res.ok) throw buildApiError(res, payload);
   return payload;
 }
 
@@ -92,7 +135,7 @@ export async function apiDelete(url) {
   handle401(res);
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(extractError(err));
+    throw buildApiError(res, err);
   }
   return true;
 }
@@ -106,7 +149,7 @@ export async function apiDownloadFile(url) {
   handle401(res);
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(extractError(err));
+    throw buildApiError(res, err);
   }
   const disposition = res.headers.get('Content-Disposition') || '';
   let filename = 'download';
