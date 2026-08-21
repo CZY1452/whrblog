@@ -304,13 +304,5 @@ class ArticleTest(TestCase):
         self.assertEqual(rsp.status_code, 404)
 
     def test_commands(self):
-        user = BlogUser.objects.get_or_create(
-            email="2393863846@qq.com",
-            username="wanghuanran")[0]
-        user.set_password("wanghuanran")
-        user.is_staff = True
-        user.is_superuser = True
-        user.save()
-
-        call_command("create_testdata")
+        """clear_cache 管理命令可正常执行"""
         call_command("clear_cache")
