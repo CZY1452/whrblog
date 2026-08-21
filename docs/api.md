@@ -58,8 +58,9 @@
 |--------|------|----------|
 | `anon`（全局） | 100/min | 所有匿名请求 |
 | `user`（全局） | 1000/min | 所有登录请求 |
-| `email` | 3/hour / IP | 重发注册码、改邮箱发信、忘记密码发码 |
+| `email` | 3/hour / IP | 重发注册码、忘记密码发码 |
 | `register_code` | 20/hour / IP | 注册页「发送验证码」 |
+| `change_email_code` | 20/hour / IP | 修改邮箱「发送验证码」 |
 | `password_reset` | 10/hour / IP | 忘记密码重置提交 |
 
 超过限流返回 `429`，DRF 原文如 `请求超过了限速。 Expected available in 2774 seconds.`（前端已统一转换为「请求过于频繁，请稍后约 X 分钟再试」，可从 `Retry-After` 头解析等待秒数）。另有「**每邮箱 1 分钟冷却**」的验证码发送兜底（见 2.2）。
@@ -212,17 +213,34 @@
 
 **错误**：`400` 原密码错误。
 
-### 2.11 修改邮箱 `POST /api/change_email`
+### 2.11 发送修改邮箱验证码 `POST /api/send_change_email_code`
 
-**权限**：需登录；**限流**：`email` 3/hour/IP
+> 与注册/找回密码**同一套验证码逻辑**（purpose=`change_email`）：1 分钟有效 + 每邮箱 1 分钟冷却 + IP 限流，缓存键 `verify_code:change_email:<邮箱>`。
+
+**权限**：需登录；**限流**：`change_email_code` 20/hour/IP + 每邮箱 1 分钟冷却
 
 **请求体**：`{"new_email": "新邮箱"}`（须未被占用，否则 `400 该邮箱已被使用`）
 
-**响应** `200`：`{"success": true, "message": "验证邮件已发送至新邮箱，请查收后点击链接确认"}`
+**响应** `200`：`{"success": true, "message": "验证码已发送至新邮箱，请查收（1 分钟内有效）"}`
 
-> 邮件内含确认链接 `/change_email/<id>/<sign>.html?email=...`，点击后由服务端确认（HTML 兜底页），随后跳转 SPA。
+**错误**：`400` 邮箱格式错误 / 已被使用；`429` 发送过于频繁。
 
-### 2.12 上传头像 `POST /api/upload_avatar`
+### 2.12 修改邮箱 `POST /api/change_email`
+
+**权限**：需登录
+
+**请求体**：
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `new_email` | string | 是 | 新邮箱（须未被占用） |
+| `code` | string | 是 | 新邮箱收到的 6 位验证码（1 分钟有效，校验后即失效） |
+
+**响应** `200`：`{"success": true, "message": "邮箱修改成功"}`
+
+**错误**：`400` 未填验证码 / 验证码错误或过期 / 邮箱已被使用。
+
+### 2.13 上传头像 `POST /api/upload_avatar`
 
 **权限**：需登录；**格式**：`multipart/form-data`
 
@@ -237,13 +255,6 @@
 ```
 
 **错误**：`400` 未选择文件 / 过大 / 格式不支持 / 图片无效。
-
-### 2.13 邮件兜底页面（非 JSON API）
-
-| 路径 | 说明 |
-|------|------|
-| `GET /verify-email` | 注册验证码激活兜底页（HTML 表单，提交到 2.6） |
-| `GET /change_email/<id>/<sign>.html` | 改邮箱确认页，点击后生效并跳转 SPA |
 
 ---
 
@@ -563,7 +574,7 @@
 
 ## 六、接口速查表
 
-### accounts（12 个 JSON API）
+### accounts（13 个 JSON API）
 
 | 方法 | 路径 | 权限 | 说明 |
 |------|------|------|------|
@@ -577,7 +588,8 @@
 | POST | /api/forget_password_code | 公开 | 发忘记密码验证码 |
 | POST | /api/forget_password | 公开 | 重置密码 |
 | POST | /api/change_password | 登录 | 改密码 |
-| POST | /api/change_email | 登录 | 改邮箱 |
+| POST | /api/send_change_email_code | 登录 | 发送改邮箱验证码 |
+| POST | /api/change_email | 登录 | 改邮箱（验证码确认） |
 | POST | /api/upload_avatar | 登录 | 上传头像 |
 
 ### blog（20 个 JSON API）

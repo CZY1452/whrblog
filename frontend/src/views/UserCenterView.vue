@@ -22,9 +22,13 @@ const newPassword = ref('');
 const newPasswordConfirm = ref('');
 const changingPassword = ref(false);
 
-// 修改邮箱
+// 修改邮箱（验证码方式，与注册/找回密码同一套逻辑）
 const newEmail = ref('');
+const changeCode = ref('');
+const sendingChangeCode = ref(false);
 const changingEmail = ref(false);
+const changeCd = ref(0);
+let changeCdTimer = null;
 
 // 头像
 const avatarFile = ref(null);
@@ -90,13 +94,50 @@ async function changePassword() {
   }
 }
 
+async function sendChangeCode() {
+  if (!newEmail.value.trim()) return notifyErr('请输入新邮箱');
+  sendingChangeCode.value = true;
+  try {
+    const data = await apiPost('/api/send_change_email_code', { new_email: newEmail.value.trim() });
+    notifyOk(data.message || '验证码已发送至新邮箱');
+    changeCd.value = 60;
+    changeCdTimer = setInterval(() => {
+      changeCd.value -= 1;
+      if (changeCd.value <= 0) {
+        clearInterval(changeCdTimer);
+        changeCd.value = 0;
+      }
+    }, 1000);
+  } catch (e) {
+    notifyErr(e.message);
+    // 被限流且能解析出等待时长时，进入冷却倒计时，避免反复点击
+    if (e.status === 429 && e.wait && e.wait <= 600) {
+      changeCd.value = e.wait;
+      changeCdTimer = setInterval(() => {
+        changeCd.value -= 1;
+        if (changeCd.value <= 0) {
+          clearInterval(changeCdTimer);
+          changeCd.value = 0;
+        }
+      }, 1000);
+    }
+  } finally {
+    sendingChangeCode.value = false;
+  }
+}
+
 async function changeEmail() {
   if (!newEmail.value.trim()) return notifyErr('请输入新邮箱');
+  if (!changeCode.value.trim()) return notifyErr('请输入邮箱验证码');
   changingEmail.value = true;
   try {
-    const data = await apiPost('/api/change_email', { new_email: newEmail.value });
+    const data = await apiPost('/api/change_email', {
+      new_email: newEmail.value.trim(),
+      code: changeCode.value.trim(),
+    });
     newEmail.value = '';
-    notifyOk(data.message || '验证邮件已发送至新邮箱');
+    changeCode.value = '';
+    notifyOk(data.message || '邮箱修改成功');
   } catch (e) {
     notifyErr(e.message);
   } finally {
@@ -198,12 +239,19 @@ onMounted(() => {
 
         <!-- 修改邮箱 -->
         <div class="border-t border-gray-100 dark:border-slate-700 pt-4 mb-4">
-          <h3 class="font-semibold text-sm mb-2">修改邮箱（发送验证邮件至新邮箱）</h3>
-          <div class="flex items-center gap-2">
+          <h3 class="font-semibold text-sm mb-2">修改邮箱（发送验证码至新邮箱）</h3>
+          <div class="flex items-center gap-2 mb-2">
             <input v-model="newEmail" type="email" placeholder="新邮箱地址" class="flex-1 rounded-lg border border-gray-200 dark:border-slate-700 p-2 text-sm bg-white dark:bg-slate-900" />
+            <button @click="sendChangeCode" :disabled="sendingChangeCode || changeCd > 0"
+              class="px-4 py-2 rounded-lg text-sm bg-blue-600 text-white disabled:opacity-40 whitespace-nowrap">
+              {{ changeCd > 0 ? changeCd + 's 后重发' : (sendingChangeCode ? '发送中…' : '发送验证码') }}
+            </button>
+          </div>
+          <div class="flex items-center gap-2">
+            <input v-model="changeCode" type="text" inputmode="numeric" maxlength="6" placeholder="邮箱验证码（1 分钟内有效）" class="flex-1 rounded-lg border border-gray-200 dark:border-slate-700 p-2 text-sm bg-white dark:bg-slate-900" />
             <button @click="changeEmail" :disabled="changingEmail"
-              class="px-4 py-2 rounded-lg text-sm bg-blue-600 text-white disabled:opacity-40">
-              {{ changingEmail ? '发送中…' : '发送验证邮件' }}
+              class="px-4 py-2 rounded-lg text-sm bg-green-600 text-white disabled:opacity-40 whitespace-nowrap">
+              {{ changingEmail ? '提交中…' : '确认修改邮箱' }}
             </button>
           </div>
         </div>

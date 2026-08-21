@@ -63,7 +63,7 @@ class CommentViewSet(mixins.ListModelMixin,
 
         article = Article.objects.filter(pk=article_id).first()
         if not article:
-            return Response({'error': 'Article not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': '文章未找到'}, status=status.HTTP_404_NOT_FOUND)
         # 评论关闭，或文章未发布（草稿/页面）时禁止评论
         if article.comment_status == 'c' or article.status != 'p' or article.type != 'a':
             return Response({'error': '该文章评论已关闭'}, status=status.HTTP_400_BAD_REQUEST)
@@ -76,11 +76,11 @@ class CommentViewSet(mixins.ListModelMixin,
         if parent_id:
             parent_comment = Comment.objects.filter(pk=parent_id).first()
             if not parent_comment:
-                return Response({'error': 'Parent comment not found'},
+                return Response({'error': '未找到父评论'},
                                 status=status.HTTP_400_BAD_REQUEST)
             # 父评论必须属于同一篇文章，防止跨文章回复
             if parent_comment.article_id != article.id:
-                return Response({'error': 'Invalid parent comment'},
+                return Response({'error': '无效的父评论。'},
                                 status=status.HTTP_400_BAD_REQUEST)
 
         comment = Comment.objects.create(
@@ -108,7 +108,7 @@ class CommentViewSet(mixins.ListModelMixin,
         reaction_type = request.data.get('reaction_type')
         valid_reactions = [choice[0] for choice in CommentReaction.REACTION_CHOICES]
         if reaction_type not in valid_reactions:
-            return Response({'error': 'Invalid reaction type'},
+            return Response({'error': '无效的反应类型。'},
                             status=status.HTTP_400_BAD_REQUEST)
 
         reaction, created = CommentReaction.objects.get_or_create(

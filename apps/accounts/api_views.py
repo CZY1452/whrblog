@@ -5,8 +5,6 @@ import uuid
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.hashers import make_password
-from django.core import signing as django_signing
-from django.urls import reverse
 from PIL import Image
 from rest_framework import status, throttling
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -25,20 +23,15 @@ from apps.accounts.serializers import (
     VerifyEmailCodeSerializer,
 )
 from apps.accounts.utils import (
-    send_verify_email,
-    set_code,
-    verify,
-    set_reg_code,
-    verify_reg_code,
-    send_reg_verify_email,
-    reg_code_can_send,
-    reg_code_mark_sent,
+    send_code_email,
+    set_verify_code,
+    verify_code,
+    code_can_send,
+    code_mark_sent,
 )
 from core.utils import (
     delete_sidebar_cache,
     generate_code,
-    get_current_site,
-    send_email,
 )
 
 logger = logging.getLogger(__name__)
@@ -56,7 +49,7 @@ class RegisterAPIView(APIView):
         code = (serializer.validated_data.get('code') or '').strip()
 
         # 校验邮箱验证码（6 位，1 分钟有效），成功即删除防复用
-        error = verify_reg_code(email, code)
+        error = verify_code(email, 'register', code)
         if error:
             return Response({'error': error}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -122,7 +115,7 @@ class VerifyEmailAPIView(APIView):
             return Response({'error': '用户不存在'}, status=status.HTTP_404_NOT_FOUND)
         if user.is_active:
             return Response({'success': True, 'message': '账号已激活'})
-        error = verify_reg_code(user.email, code)
+        error = verify_code(user.email, 'register', code)
         if error:
             return Response({'error': error}, status=status.HTTP_400_BAD_REQUEST)
         user.is_active = True
@@ -237,15 +230,15 @@ class SendRegisterCodeAPIView(APIView):
             return Response({'error': '请填写正确的邮箱'}, status=status.HTTP_400_BAD_REQUEST)
         if BlogUser.objects.filter(email=email).exists():
             return Response({'error': '该邮箱已注册'}, status=status.HTTP_400_BAD_REQUEST)
-        if not reg_code_can_send(email):
+        if not code_can_send(email, 'register'):
             return Response(
                 {'error': '验证码发送过于频繁，请 1 分钟后再试'},
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
         code = generate_code()
-        set_reg_code(email, code)
-        reg_code_mark_sent(email)
-        send_reg_verify_email(email, code)
+        set_verify_code(email, code, 'register')
+        code_mark_sent(email, 'register')
+        send_code_email(email, code, 'register')
         return Response({'success': True, 'message': '验证码已发送，请查收邮箱（1 分钟内有效）'})
 
 
@@ -261,46 +254,73 @@ class ResendVerifyEmailAPIView(APIView):
         user = BlogUser.objects.filter(pk=user_id, is_active=False).first()
         if not user:
             return Response({'error': '用户不存在或已激活'}, status=status.HTTP_404_NOT_FOUND)
-        if not reg_code_can_send(user.email):
+        if not code_can_send(user.email, 'register'):
             return Response(
                 {'error': '验证码发送过于频繁，请 1 分钟后再试'},
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
         code = generate_code()
-        set_reg_code(user.email, code)
-        reg_code_mark_sent(user.email)
-        send_reg_verify_email(user.email, code)
+        set_verify_code(user.email, code, 'register')
+        code_mark_sent(user.email, 'register')
+        send_code_email(user.email, code, 'register')
         return Response({'success': True, 'message': '验证码已重新发送'})
 
 
-class ChangeEmailAPIView(APIView):
-    """修改邮箱：发送验证邮件到新邮箱，点击链接后生效"""
+class ChangeEmailCodeThrottle(throttling.SimpleRateThrottle):
+    """修改邮箱验证码发送节流：每 IP 每小时最多 20 次（另有每邮箱 1 分钟冷却兜底）"""
+    scope = 'change_email_code'
+    rate = '20/hour'
+
+    def get_cache_key(self, request, view):
+        return self.cache_format % {
+            'scope': self.scope,
+            'ident': self.get_ident(request),
+        }
+
+
+class SendChangeEmailCodeAPIView(APIView):
+    """修改邮箱「发送验证码」：向新邮箱发送 6 位验证码（1 分钟有效 + 1 分钟冷却 + IP 限流）"""
     permission_classes = [IsAuthenticated]
-    throttle_classes = [EmailThrottle]
+    throttle_classes = [ChangeEmailCodeThrottle]
+
+    def post(self, request):
+        new_email = (request.data.get('new_email') or '').strip()
+        if not new_email or '@' not in new_email or '.' not in new_email.split('@')[-1]:
+            return Response({'error': '请填写正确的邮箱'}, status=status.HTTP_400_BAD_REQUEST)
+        if BlogUser.objects.filter(email=new_email).exists():
+            return Response({'error': '该邮箱已被使用'}, status=status.HTTP_400_BAD_REQUEST)
+        if not code_can_send(new_email, 'change_email'):
+            return Response(
+                {'error': '验证码发送过于频繁，请 1 分钟后再试'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        code = generate_code()
+        set_verify_code(new_email, code, 'change_email')
+        code_mark_sent(new_email, 'change_email')
+        send_code_email(new_email, code, 'change_email')
+        return Response({'success': True, 'message': '验证码已发送至新邮箱，请查收（1 分钟内有效）'})
+
+
+class ChangeEmailAPIView(APIView):
+    """修改邮箱：校验新邮箱验证码后更新邮箱"""
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         serializer = ChangeEmailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         new_email = serializer.validated_data['new_email']
-        sign = django_signing.dumps(
-            {'user_id': request.user.id, 'new_email': new_email},
-            salt='change-email',
-        )
-        site = get_current_site().domain
-        if settings.DEBUG:
-            site = '127.0.0.1:8000'
-        path = reverse('accounts:change_email_confirm', kwargs={
-            'id': request.user.id, 'sign': sign})
-        url = "http://{site}{path}?email={email}".format(
-            site=site, path=path, email=new_email)
-        content = """
-        <p>请点击下面链接确认修改您的邮箱为：{email}</p>
-        <a href="{url}" rel="bookmark">{url}</a>
-        <br />
-        如果上面链接无法打开，请将此链接复制至浏览器：{url}
-        """.format(email=new_email, url=url)
-        send_email(emailto=[new_email], title='确认修改邮箱', content=content)
-        return Response({'success': True, 'message': '验证邮件已发送至新邮箱，请查收后点击链接确认'})
+        code = (request.data.get('code') or '').strip()
+        if not code:
+            return Response({'error': '请输入邮箱验证码'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 校验新邮箱收到的验证码（1 分钟有效，成功即删除防复用）
+        error = verify_code(new_email, 'change_email', code)
+        if error:
+            return Response({'error': error}, status=status.HTTP_400_BAD_REQUEST)
+
+        request.user.email = new_email
+        request.user.save(update_fields=['email', 'last_modify_time'])
+        return Response({'success': True, 'message': '邮箱修改成功'})
 
 
 class ForgetPasswordAPIView(APIView):
@@ -315,7 +335,7 @@ class ForgetPasswordAPIView(APIView):
         code = serializer.validated_data['code']
 
         # 验证邮箱验证码
-        error = verify(email, code)
+        error = verify_code(email, 'reset', code)
         if error:
             return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -337,8 +357,8 @@ class ForgetPasswordEmailCodeAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data['email']
         code = generate_code()
-        send_verify_email(email, code)
-        set_code(email, code)
+        set_verify_code(email, code, 'reset')
+        send_code_email(email, code, 'reset')
         return Response({'success': True, 'message': '验证码已发送'})
 
 

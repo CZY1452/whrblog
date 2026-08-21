@@ -64,14 +64,18 @@ class EmailApiTest(BaseTestCase):
         super().setUp()
         self.client.force_login(self.user)
 
-    def test_change_email_sends_verification(self):
+    def test_change_email_with_code(self):
+        from apps.accounts.utils import set_verify_code
+        new_email = 'brandnew@test.com'
+        set_verify_code(new_email, '123456', 'change_email')  # 模拟新邮箱已收到验证码
         response = self.client.post('/api/change_email', data=json.dumps({
-            'new_email': 'brandnew@test.com',
+            'new_email': new_email,
+            'code': '123456',
         }), content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json()['success'])
         self.user.refresh_from_db()
-        self.assertEqual(self.user.email, 'test@test.com')
+        self.assertEqual(self.user.email, new_email)
 
     def test_change_email_duplicate(self):
         self.create_user('other_user', email='other@test.com')

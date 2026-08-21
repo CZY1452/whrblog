@@ -199,7 +199,7 @@ whrblog/
 
 | 模块 | 接口数 | 代表性接口 | 认证 |
 |------|--------|------------|------|
-| accounts | 12 | `POST /api/register`、`POST /api/send_register_code`、`POST /api/login`、`GET/PATCH /api/user`、`POST /api/verify_email`、`POST /api/forget_password`、`POST /api/change_password/change_email`、`POST /api/upload_avatar` | 公开 / 需登录 |
+| accounts | 13 | `POST /api/register`、`POST /api/send_register_code`、`POST /api/login`、`GET/PATCH /api/user`、`POST /api/verify_email`、`POST /api/forget_password`、`POST /api/change_password`、`POST /api/send_change_email_code`、`POST /api/change_email`、`POST /api/upload_avatar` | 公开 / 需登录 |
 | blog | 23 | `GET /api/articles/`、`GET /api/articles/<id>/`、`POST /api/article_create`、草稿 5 操作、`GET /api/search/`、`GET /api/siteinfo/`、`GET /api/sidebar/`、`POST /api/upload`、`POST /api/clean_cache` | 公开读 / 管理员写 |
 | comments | 5 | `GET/POST /api/comments/`、`GET/POST /api/comments/<id>/react/` | 公开读 / 登录写 |
 | system | 4 | `GET /health/`、`GET /sitemap.xml`、`/admin/`、`/media/`、`/static/` | 公开 / 管理员 |
@@ -376,7 +376,7 @@ sequenceDiagram
 | P0 | **`DJANGO_SECURE_SSL=True` 纯 HTTP 部署 → 登录/CSRF 失败**（Cookie 带 Secure） | 纯 HTTP 必须 `False`；上 HTTPS 后再开 |
 | P1 | **DRF 限流 429**：`email` scope 3/hour 被 4 个邮件接口共享，测试易撞墙，文案中英混杂 | 已拆独立 `register_code` scope（20/hour）；前端 `api.js` 已做 429 友好文案+自动倒计时；清缓存键带 `:1:` 前缀（如 `:1:throttle_email_127.0.0.1`） |
 | P1 | **8000 端口叠两个 runserver**（重启后旧进程未杀） | `netstat -ano | findstr :8000` 找到 PID 后 `taskkill /PID <pid> /F` |
-| P1 | **邮件链接 404**：`/verify-email` 无路由、或跑旧代码发旧链接 | 确认 url 路由与视图存在；重启后强刷；改 `RegisterView` 走单页内联验证后已绕开 |
+| P1 | **邮件链接 404 历史坑**：旧版注册/改邮箱曾走邮件链接跳转（`/verify-email`、`/change_email/<id>/<sign>.html`），链接与路由不匹配会 404 | 现注册/找回/改邮箱已**全部验证码化**（服务端兜底页与签名链接均已删除），不再有邮件链接跳转 |
 | P1 | **`BlogSettings` 有 2 行重复**（唯一性仅 `clean()` 非 DB 约束） | 删除重复行；当前种子已排除该表 |
 | P2 | **`uploads/` 被 gitignore**：上传数据与默认头像不入库，新服务器缺失 | 默认头像已改为随代码静态资源 + `AccountsConfig.ready()` 自动落盘；用户上传文件需手动/卷同步 |
 | P2 | **`loaddata` 不自动排外键序**：种子文件必须按依赖顺序 dump | 用 `dumpdata accounts.bloguser blog.category blog.tag blog.article`（依赖在前）；`Article.tags` M2M 内联输出无需单独导出 |

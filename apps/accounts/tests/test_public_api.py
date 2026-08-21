@@ -51,9 +51,9 @@ class RegisterApiTest(BaseTestCase):
 
     def test_register_with_code_activates_user(self):
         """新注册流程：先发验证码，携带 code 注册，校验通过即激活"""
-        from apps.accounts.utils import set_reg_code
+        from apps.accounts.utils import set_verify_code
         email = 'newbie@test.com'
-        set_reg_code(email, '123456')  # 模拟邮箱已收到验证码（写入缓存）
+        set_verify_code(email, '123456', 'register')  # 模拟邮箱已收到验证码（写入缓存）
         url = reverse('accounts:api-register')
         response = self.client.post(url, data=json.dumps({
             'username': 'newbie',
@@ -73,9 +73,9 @@ class RegisterApiTest(BaseTestCase):
 
     def test_register_wrong_code_rejected(self):
         """注册时验证码错误应返回 400 且不创建用户"""
-        from apps.accounts.utils import set_reg_code
+        from apps.accounts.utils import set_verify_code
         email = 'wrongcode@test.com'
-        set_reg_code(email, '123456')
+        set_verify_code(email, '123456', 'register')
         url = reverse('accounts:api-register')
         response = self.client.post(url, data=json.dumps({
             'username': 'wrongcode',
@@ -136,3 +136,54 @@ class ForgetPasswordApiTest(BaseTestCase):
         }), content_type='application/json')
         # 验证码校验先于邮箱存在性检查，未存储验证码时返回 400
         self.assertIn(response.status_code, [400, 404])
+
+
+class ChangeEmailApiTest(BaseTestCase):
+    """修改邮箱 API（验证码方式，与注册/找回密码同一套逻辑）"""
+
+    def test_change_email_with_code(self):
+        from apps.accounts.utils import set_verify_code
+        self.login_user()
+        new_email = 'newmail@test.com'
+        set_verify_code(new_email, '123456', 'change_email')  # 模拟新邮箱已收到验证码
+        url = reverse('accounts:api-change-email')
+        response = self.client.post(url, data=json.dumps({
+            'new_email': new_email,
+            'code': '123456',
+        }), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['success'])
+        from apps.accounts.models import BlogUser
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, new_email)
+
+    def test_change_email_wrong_code_rejected(self):
+        from apps.accounts.utils import set_verify_code
+        self.login_user()
+        new_email = 'newmail2@test.com'
+        set_verify_code(new_email, '123456', 'change_email')
+        url = reverse('accounts:api-change-email')
+        response = self.client.post(url, data=json.dumps({
+            'new_email': new_email,
+            'code': '000000',
+        }), content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        self.user.refresh_from_db()
+        self.assertNotEqual(self.user.email, new_email)
+
+    def test_change_email_requires_login(self):
+        url = reverse('accounts:api-change-email')
+        response = self.client.post(url, data=json.dumps({
+            'new_email': 'x@y.com',
+            'code': '123456',
+        }), content_type='application/json')
+        self.assertIn(response.status_code, [401, 403])
+
+    def test_send_change_email_code_occupied(self):
+        """新邮箱已被占用时发码应 400"""
+        self.login_user()
+        url = reverse('accounts:api-send-change-email-code')
+        response = self.client.post(url, data=json.dumps({
+            'new_email': 'test@test.com',
+        }), content_type='application/json')
+        self.assertEqual(response.status_code, 400)

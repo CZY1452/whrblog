@@ -3,7 +3,6 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 
 from apps.accounts.models import BlogUser
-from apps.accounts.utils import get_code, verify
 
 # 默认头像：本地静态图，所有未自定义头像的用户共用
 DEFAULT_AVATAR_URL = settings.MEDIA_URL + 'avatar/1.png'

@@ -162,11 +162,11 @@ class AccountTest(TestCase):
     def test_verify_email_code(self):
         to_email = "admin@admin.com"
         code = generate_code()
-        utils.set_code(to_email, code)
-        utils.send_verify_email(to_email, code)
+        utils.set_verify_code(to_email, code, 'reset')
+        utils.send_code_email(to_email, code, 'reset')
 
-        err = utils.verify("admin@admin.com", code)
+        err = utils.verify_code("admin@admin.com", 'reset', code)
         self.assertEqual(err, None)
 
-        err = utils.verify("admin@123.com", code)
+        err = utils.verify_code("admin@123.com", 'reset', code)
         self.assertEqual(type(err), str)

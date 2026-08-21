@@ -37,7 +37,7 @@ def page_not_found_view(request, exception, template_name='blog/error_page.html'
     return _error_response(
         request,
         404,
-        'Sorry, the page you requested is not found.',
+        '抱歉，您请求的页面未找到。',
         exception
     )
 
@@ -46,7 +46,7 @@ def server_error_view(request, template_name='blog/error_page.html'):
     return _error_response(
         request,
         500,
-        'Sorry, the server is busy, please try again later.',
+        '抱歉，服务器繁忙，请稍后重试。',
     )
 
 
@@ -54,6 +54,6 @@ def permission_denied_view(request, exception, template_name='blog/error_page.ht
     return _error_response(
         request,
         403,
-        'Sorry, you do not have permission to access this page.',
+        '抱歉，您没有访问此页面的权限。',
         exception
     )
