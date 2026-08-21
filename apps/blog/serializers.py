@@ -110,7 +110,7 @@ class ArticleCreateSerializer(serializers.ModelSerializer):
         model = Article
         fields = [
             'id', 'title', 'body', 'type', 'status', 'comment_status',
-            'show_toc', 'category', 'tags',
+            'show_toc', 'is_top', 'category', 'tags',
         ]
         read_only_fields = ['id']
 
@@ -141,7 +141,7 @@ class ArticleListSerializer(serializers.ModelSerializer):
         model = Article
         fields = [
             'id', 'title', 'url', 'summary', 'type', 'status',
-            'views', 'pub_time', 'creation_time', 'author', 'category', 'tags',
+            'views', 'is_top', 'pub_time', 'creation_time', 'author', 'category', 'tags',
         ]
         read_only_fields = fields
 

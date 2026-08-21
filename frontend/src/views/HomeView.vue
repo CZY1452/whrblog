@@ -73,6 +73,7 @@ function formatDate(dateStr) {
           <router-link :to="a.url" class="text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400">
             {{ a.title }}
           </router-link>
+          <span v-if="a.is_top" class="inline-block align-middle ml-2 px-1.5 py-0.5 rounded bg-amber-400/90 text-white text-xs font-medium">置顶</span>
         </h2>
         <div class="text-xs text-gray-400 mb-2 flex flex-wrap gap-2">
           <span>{{ a.author?.nickname || a.author?.username }}</span>

@@ -70,7 +70,7 @@ class BaseTestCase(TestCase):
         return tag
 
     def create_article(self, title='测试文章', body='测试内容', author=None,
-                      category=None, status='p', article_type='a'):
+                      category=None, status='p', article_type='a', pub_time=None):
         """创建文章"""
         if author is None:
             author = self.user if hasattr(self, 'user') else self.create_user()
@@ -85,6 +85,9 @@ class BaseTestCase(TestCase):
             type=article_type,
             status=status
         )
+        if pub_time is not None:
+            article.pub_time = pub_time
+            article.save(update_fields=['pub_time'])
         return article
 
     def create_comment(self, article=None, author=None, body='测试评论', parent=None):

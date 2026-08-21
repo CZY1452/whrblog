@@ -9,6 +9,9 @@ from rest_framework.views import APIView
 
 logger = logging.getLogger(__name__)
 
+# 右侧侧栏固定展示条数：最新文章 / 阅读排行 / 分类
+SIDEBAR_DISPLAY_COUNT = 5
+
 from apps.blog.models import Article, BlogSettings, Category, Links, SideBar, Tag
 from apps.blog.serializers import (
     ArticleCreateSerializer,
@@ -43,6 +46,9 @@ class ArticleViewSet(mixins.ListModelMixin,
             qs = qs.filter(tags__slug=tag)
         if author:
             qs = qs.filter(author__username=author)
+        if not (category or tag or author):
+            # 仅全站文章列表置顶优先，分类/标签/作者列表保持原有排序
+            qs = qs.order_by('-is_top', '-article_order', '-pub_time')
         return qs
 
     def retrieve(self, request, *args, **kwargs):
@@ -292,11 +298,11 @@ class SidebarAggregateView(APIView):
 
         recent_articles = Article.objects.filter(
             status='p'
-        ).select_related('author', 'category')[:blogsetting.sidebar_article_count]
+        ).select_related('author', 'category')[:SIDEBAR_DISPLAY_COUNT]
 
         sidebar_categorys = Category.objects.annotate(
             article_count=Count('article', filter=Q(article__status='p', article__type='a'))
-        )
+        )[:SIDEBAR_DISPLAY_COUNT]
 
         extra_sidebars = SideBar.objects.filter(
             is_enable=True
@@ -306,7 +312,7 @@ class SidebarAggregateView(APIView):
             status='p'
         ).select_related('author', 'category').order_by(
             '-views'
-        )[:blogsetting.sidebar_article_count]
+        )[:SIDEBAR_DISPLAY_COUNT]
 
         links = Links.objects.filter(is_enable=True).filter(
             Q(show_type=str(linktype)) | Q(show_type=LinkShowType.A)

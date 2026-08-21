@@ -30,10 +30,20 @@ def open_article_commentstatus(modeladmin, request, queryset):
     queryset.update(comment_status='o')
 
 
-makr_article_publish.short_description = _('Publish selected articles')
-draft_article.short_description = _('Draft selected articles')
-close_article_commentstatus.short_description = _('Close article comments')
-open_article_commentstatus.short_description = _('Open article comments')
+def set_article_top(modeladmin, request, queryset):
+    queryset.update(is_top=True)
+
+
+def cancel_article_top(modeladmin, request, queryset):
+    queryset.update(is_top=False)
+
+
+makr_article_publish.short_description = _('发布所选文章')
+draft_article.short_description = _('转草稿')
+close_article_commentstatus.short_description = _('关闭文章评论')
+open_article_commentstatus.short_description = _('开启文章评论')
+set_article_top.short_description = _('置顶所选文章')
+cancel_article_top.short_description = _('取消置顶')
 
 
 class ArticleAdmin(admin.ModelAdmin):
@@ -49,8 +59,10 @@ class ArticleAdmin(admin.ModelAdmin):
         'views',
         'status',
         'type',
-        'article_order')
+        'article_order',
+        'is_top')
     list_display_links = ('id', 'title')
+    list_editable = ('is_top',)
     list_filter = ('status', 'type', 'category')
     date_hierarchy = 'creation_time'
     filter_horizontal = ('tags',)
@@ -60,7 +72,9 @@ class ArticleAdmin(admin.ModelAdmin):
         makr_article_publish,
         draft_article,
         close_article_commentstatus,
-        open_article_commentstatus]
+        open_article_commentstatus,
+        set_article_top,
+        cancel_article_top]
     raw_id_fields = ('author', 'category',)
 
     def link_to_category(self, obj):
@@ -68,7 +82,7 @@ class ArticleAdmin(admin.ModelAdmin):
         link = reverse('admin:%s_%s_change' % info, args=(obj.category.id,))
         return format_html('<a href="{}">{}</a>', link, obj.category.name)
 
-    link_to_category.short_description = _('category')
+    link_to_category.short_description = _('分类')
 
     def get_form(self, request, obj=None, **kwargs):
         form = super(ArticleAdmin, self).get_form(request, obj, **kwargs)

@@ -98,6 +98,7 @@ onMounted(() => {
       <div v-for="a in results" :key="a.id" class="bg-white dark:bg-slate-800 rounded-lg shadow p-5">
         <h2 class="text-lg font-semibold">
           <router-link :to="a.url" class="hover:text-blue-600 dark:hover:text-blue-400" v-html="titleHtml(a)"></router-link>
+          <span v-if="a.is_top" class="inline-block align-middle ml-2 px-1.5 py-0.5 rounded bg-amber-400/90 text-white text-xs font-medium">置顶</span>
         </h2>
         <div class="text-xs text-gray-400 mt-1">{{ a.author?.nickname || a.author?.username }} · {{ formatDate(a.pub_time) }} · {{ a.views }} 阅读</div>
         <p class="text-sm text-gray-600 dark:text-gray-300 mt-2 search-snippet" v-html="summaryHtml(a)"></p>

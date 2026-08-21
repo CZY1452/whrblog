@@ -83,6 +83,7 @@ class Article(BaseModel):
         on_delete=models.CASCADE)
     article_order = models.IntegerField(
         _('排序'), blank=False, null=False, default=0)
+    is_top = models.BooleanField(_('置顶'), blank=False, null=False, default=False)
     show_toc = models.BooleanField(_('显示目录'), blank=False, null=False, default=False)
     category = models.ForeignKey(
         'Category',
