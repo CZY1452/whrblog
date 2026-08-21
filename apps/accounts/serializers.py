@@ -1,8 +1,12 @@
+from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 
 from apps.accounts.models import BlogUser
 from apps.accounts.utils import get_code, verify
+
+# 默认头像：本地静态图，所有未自定义头像的用户共用
+DEFAULT_AVATAR_URL = settings.MEDIA_URL + 'avatar/1.png'
 
 
 class BlogUserSerializer(serializers.ModelSerializer):
@@ -55,15 +59,13 @@ class RegisterSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        import hashlib
         validated_data.pop('password_confirm')
         validated_data.pop('code', None)  # 验证码仅用于校验，不入库
         validated_data['password'] = make_password(validated_data['password'])
         validated_data['is_active'] = False
         validated_data['source'] = 'Register'
-        email = validated_data.get('email') or ''
-        hash_ = hashlib.md5(email.strip().lower().encode('utf-8')).hexdigest()
-        validated_data['avatar'] = 'https://www.gravatar.com/avatar/{hash}?s=80&d=mp'.format(hash=hash_)
+        # 默认头像改为本地图（不再用 Gravatar 外链）
+        validated_data['avatar'] = DEFAULT_AVATAR_URL
         return BlogUser.objects.create(**validated_data)
 
 
