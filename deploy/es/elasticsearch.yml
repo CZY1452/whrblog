@@ -1,0 +1,22 @@
+# ============================================================
+#  WhrBlog Elasticsearch 固定配置
+#  作用：覆盖 ES 9.x 首次启动的「自动安全配置」。
+#  官方镜像在第一次启动时会自动启用 http.ssl（TLS 加密 9200 端口），
+#  但本项目 backend 用明文 http://elasticsearch:9200 访问，
+#  导致 ES 收到明文请求直接掐连接（RemoteDisconnected）。
+#  这里显式关闭 http/transport 的 TLS，仅保留账号密码认证，
+#  与 backend 的 ES_HOST=http://elasticsearch:9200 对齐。
+# ============================================================
+cluster.name: "docker-cluster"
+network.host: 0.0.0.0
+
+# 保留安全认证（密码沿用 keystore 中已生成的 elastic 密码）
+xpack.security.enabled: true
+# 关闭自动注册引导，避免再次生成 TLS 证书与开启 http.ssl
+xpack.security.enrollment.enabled: false
+# 关键：明文 HTTP，不启用 TLS（backend 用 http 访问）
+xpack.security.http.ssl.enabled: false
+# 单节点部署，关闭节点间传输 TLS
+xpack.security.transport.ssl.enabled: false
+
+discovery.type: single-node

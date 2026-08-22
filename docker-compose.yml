@@ -194,6 +194,14 @@ services:
     image: whrblog-es:9.4.3
     container_name: whrblog-es
     restart: unless-stopped
+    # ES 9.x 硬性要求 vm.max_map_count ≥ 262144（Aliyun 裸镜像默认 65530 会导致搜索时 mmap 失败、连接被重置）。
+    # 此处自动设置，避免新服务器漏配；若 docker compose up 报 sysctl 权限错误，
+    # 可删除本段并在宿主机执行：sysctl -w vm.max_map_count=262144 并写入 /etc/sysctl.conf。
+    sysctls:
+      - vm.max_map_count=262144
+    ulimits:
+      memlock: -1
+      nofile: 65536
     environment:
       - discovery.type=single-node
       # ES 9.x 默认启用安全（TLS + 认证），用 ELASTIC_PASSWORD 设置 elastic 用户密码
